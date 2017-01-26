@@ -107,7 +107,7 @@ angular.module(PKG.name + '.feature.tracker')
         }
       })
       .state('tracker', {
-        url: '',
+        url: '?iframe',
         abstract: true,
         parent: 'ns',
         template: '<ui-view/>',

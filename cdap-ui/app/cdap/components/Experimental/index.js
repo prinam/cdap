@@ -15,11 +15,24 @@
  */
 
 import React, {Component} from 'react';
+
+require('./Experimental.scss');
+
 export default class Experimental extends Component {
   render() {
     return (
-      <div>
-        <h1> Experimental </h1>
+      <div className="experimental-container text-xs-center">
+        <h1> iframe </h1>
+
+        <div className="iframe-container">
+          <iframe
+            src="http://localhost:11011/tracker/ns/default/entity/streams/testStream1/usage?iframe=true"
+            width="80%"
+            height="100%"
+            frameBorder="0"
+          >
+          </iframe>
+        </div>
       </div>
     );
   }
