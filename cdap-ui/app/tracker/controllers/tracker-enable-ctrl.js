@@ -15,7 +15,7 @@
  */
 
 class TrackerEnableController{
-  constructor($state, myTrackerApi, $scope, myAlertOnValium, $q, CDAP_UI_CONFIG) {
+  constructor($state, myTrackerApi, $scope, myAlertOnValium, $q, CDAP_UI_CONFIG, $window) {
     this.$state = $state;
     this.myTrackerApi = myTrackerApi;
     this.$scope = $scope;
@@ -23,6 +23,7 @@ class TrackerEnableController{
     this.myAlertOnValium = myAlertOnValium;
     this.$q = $q;
     this.CDAP_UI_CONFIG = CDAP_UI_CONFIG;
+    this.$window = $window;
 
     this.trackerServiceRunning = false;
     this.auditFlowRunning = false;
@@ -169,7 +170,12 @@ class TrackerEnableController{
       return;
     }
 
-    this.$state.go('tracker.home');
+    if (this.$state.params.sourceUrl) {
+      window.location.href = decodeURIComponent(this.$state.params.sourceUrl);
+    } else {
+      this.$state.go('tracker.home');
+    }
+
     this.enableTrackerLoading = false;
   }
 

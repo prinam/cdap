@@ -20,13 +20,18 @@ require('./Experimental.scss');
 
 export default class Experimental extends Component {
   render() {
+    let url = 'http://localhost:11011/tracker/ns/default/entity/streams/testStream1/usage?iframe=true';
+    let encodedSource = encodeURIComponent(url);
+
+    url += `&sourceUrl=${encodedSource}`;
+
     return (
       <div className="experimental-container text-xs-center">
         <h1> iframe </h1>
 
         <div className="iframe-container">
           <iframe
-            src="http://localhost:11011/tracker/ns/default/entity/streams/testStream1/usage?iframe=true"
+            src={url}
             width="80%"
             height="100%"
             frameBorder="0"
