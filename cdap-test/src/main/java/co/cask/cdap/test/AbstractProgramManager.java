@@ -19,6 +19,7 @@ package co.cask.cdap.test;
 import co.cask.cdap.common.utils.Tasks;
 import co.cask.cdap.proto.Id;
 import co.cask.cdap.proto.ProgramRunStatus;
+import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.RunRecord;
 import co.cask.cdap.proto.id.ProgramId;
 import com.google.common.collect.ImmutableMap;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeoutException;
 public abstract class AbstractProgramManager<T extends ProgramManager> implements ProgramManager<T> {
   protected final ProgramId programId;
   private final ApplicationManager applicationManager;
+  private boolean isStopped = false;
 
   public AbstractProgramManager(ProgramId programId, ApplicationManager applicationManager) {
     this.applicationManager = applicationManager;
@@ -62,6 +64,7 @@ public abstract class AbstractProgramManager<T extends ProgramManager> implement
 
   @Override
   public void stop() {
+    isStopped = true;
     applicationManager.stopProgram(programId);
   }
 
@@ -72,9 +75,15 @@ public abstract class AbstractProgramManager<T extends ProgramManager> implement
 
   @Override
   public void waitForFinish(long timeout, TimeUnit timeoutUnit) throws TimeoutException, InterruptedException {
-    // Min sleep time is 10ms, max sleep time is 1 seconds
-    long sleepMillis = Math.max(10, Math.min(timeoutUnit.toMillis(timeout) / 10, TimeUnit.SECONDS.toMillis(1)));
-    waitForStatus(false, sleepMillis, timeoutUnit.toMillis(timeout), TimeUnit.MILLISECONDS);
+    try {
+      if (isStopped) {
+        waitForRun(ProgramRunStatus.KILLED, timeout, timeoutUnit);
+      } else {
+        waitForRun(ProgramRunStatus.COMPLETED, timeout, timeoutUnit);
+      }
+    } catch (ExecutionException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
