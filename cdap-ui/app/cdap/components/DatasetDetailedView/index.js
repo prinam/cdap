@@ -31,6 +31,8 @@ import DatasetDetaildViewTab from 'components/DatasetDetailedView/Tabs';
 import {MySearchApi} from 'api/search';
 import {parseMetadata} from 'services/metadata-parser';
 
+require('./DatasetDetailedView.scss');
+
 export default class DatasetDetailedView extends Component {
   constructor(props) {
     super(props);
