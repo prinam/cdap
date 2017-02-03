@@ -31,6 +31,8 @@ import StreamDetaildViewTab from 'components/StreamDetailedView/Tabs';
 import {MySearchApi} from 'api/search';
 import {parseMetadata} from 'services/metadata-parser';
 
+require('./StreamDetailedView.scss');
+
 export default class StreamDetailedView extends Component {
   constructor(props) {
     super(props);
