@@ -55,6 +55,12 @@ export default class AddPropertyModal extends Component {
     this.setState({valueInput: e.target.value});
   }
 
+  componentDidUpdate() {
+    if (this.state.isOpen && this.state.keyInput.length === 0 && this.state.valueInput.length === 0) {
+      document.getElementById('add-property-modal-key-input').focus();
+    }
+  }
+
   onSave() {
     let uniqueCheck = this.props.existingProperties.filter((row) => {
       return row.key === this.state.keyInput;
@@ -131,6 +137,7 @@ export default class AddPropertyModal extends Component {
             <div className="col-xs-3">
               <input
                 type="text"
+                id="add-property-modal-key-input"
                 className="form-control"
                 placeholder="Enter name"
                 value={this.state.keyInput}

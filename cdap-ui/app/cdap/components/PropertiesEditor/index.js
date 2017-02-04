@@ -63,7 +63,7 @@ export default class PropertiesEditor extends Component {
       .combineLatest(MyMetadataApi.getProperties(userParams).map(convertObjToArr))
       .subscribe((res) => {
         this.setState({
-          systemProperties: res[0],
+          systemProperties: res[0].filter((row) => row.key !== 'schema'),
           userProperties: res[1]
         });
       });
