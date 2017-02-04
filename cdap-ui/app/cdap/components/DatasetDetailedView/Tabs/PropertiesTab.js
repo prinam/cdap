@@ -20,6 +20,10 @@ import PropertiesEditor from 'components/PropertiesEditor';
 export default function PropertiesTab({entity}) {
   return (
     <div className="properties-container">
+      <div className="message-section">
+        <strong>{entity.id} Properties</strong>
+      </div>
+
       <PropertiesEditor
         entityType="datasets"
         entityId={entity.id}

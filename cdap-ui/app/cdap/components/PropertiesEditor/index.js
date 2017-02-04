@@ -20,6 +20,7 @@ import NamespaceStore from 'services/NamespaceStore';
 import map from 'lodash/map';
 import shortid from 'shortid';
 import AddPropertyModal from 'components/PropertiesEditor/AddPropertyModal';
+import T from 'i18n-react';
 
 require('./PropertiesEditor.scss');
 
@@ -141,7 +142,7 @@ export default class PropertiesEditor extends Component {
         <tr key={row.id}>
           <td>{row.key}</td>
           <td>{row.value}</td>
-          <td>System</td>
+          <td>{T.translate('features.PropertiesEditor.system')}</td>
           <td></td>
         </tr>
       );
@@ -156,14 +157,14 @@ export default class PropertiesEditor extends Component {
             className="action-link"
             onClick={this.saveProperty.bind(this, row)}
           >
-            Save
+            {T.translate('features.PropertiesEditor.save')}
           </span>
 
           <span
             className="action-link"
             onClick={this.setEdit.bind(this, null)}
           >
-            Cancel
+            {T.translate('features.PropertiesEditor.cancel')}
           </span>
         </span>
       );
@@ -200,12 +201,12 @@ export default class PropertiesEditor extends Component {
                     className="form-control"
                     value={this.state.newValue}
                     onChange={this.handleNewValueChange}
-                    placeholder="Enter new value"
+                    placeholder={T.translate('features.PropertiesEditor.newValuePlaceholder')}
                   />
                 )
             }
           </td>
-          <td>Business</td>
+          <td>{T.translate('features.PropertiesEditor.user')}</td>
           <td className="actions">
             {this.renderActions(row)}
           </td>
@@ -227,9 +228,9 @@ export default class PropertiesEditor extends Component {
         <table className="table">
           <thead>
             <tr>
-              <th className="key">Name</th>
-              <th className="value">Value</th>
-              <th className="scope">Scope</th>
+              <th className="key">{T.translate('features.PropertiesEditor.name')}</th>
+              <th className="value">{T.translate('features.PropertiesEditor.value')}</th>
+              <th className="scope">{T.translate('features.PropertiesEditor.scope')}</th>
               <th className="actions"></th>
             </tr>
           </thead>

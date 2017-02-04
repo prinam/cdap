@@ -395,6 +395,24 @@ features:
       type: "Type: "
   Pagination:
     dropdown-label: Page
+  PropertiesEditor:
+    AddProperty:
+      button: Add Property
+      modalHeader: Add Property for {entityId}
+      keyPlaceholder: Enter name
+      valuePlaceholder: Enter value
+      shortError: Failed to add property
+      propertyExistError: Property {key} already exists
+    system: System
+    user: Business
+    save: Save
+    cancel: Cancel
+    name: Name
+    value: Value
+    scope: Scope
+    newValuePlaceholder: Enter enw value
+
+
   Resource-Center:
     Stream:
       label: Stream

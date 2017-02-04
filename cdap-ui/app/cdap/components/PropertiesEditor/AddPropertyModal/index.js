@@ -19,6 +19,7 @@ import {Modal, ModalHeader, ModalBody, ModalFooter} from 'reactstrap';
 import CardActionFeedback from 'components/CardActionFeedback';
 import {MyMetadataApi} from 'api/metadata';
 import NamespaceStore from 'services/NamespaceStore';
+import T from 'i18n-react';
 
 require('./AddPropertyModal.scss');
 
@@ -68,7 +69,7 @@ export default class AddPropertyModal extends Component {
 
     if (uniqueCheck.length > 0) {
       this.setState({
-        error: `Property ${this.state.keyInput} already exists`
+        error: T.translate('features.PropertiesEditor.AddProperty.propertyExistError', {key: this.state.keyInput})
       });
       return;
     }
@@ -101,7 +102,7 @@ export default class AddPropertyModal extends Component {
       <ModalFooter>
         <CardActionFeedback
           type='DANGER'
-          message="Failed to add property"
+          message={T.translate('features.PropertiesEditor.AddProperty.shortError')}
           extendedMessage={this.state.error}
         />
       </ModalFooter>
@@ -122,7 +123,7 @@ export default class AddPropertyModal extends Component {
       >
         <ModalHeader>
           <span>
-            Add Property for {this.props.entityType} {this.props.entityId}
+            {T.translate('features.PropertiesEditor.AddProperty.modalHeader', {entityId: this.props.entityId})}
           </span>
 
           <div
@@ -139,7 +140,7 @@ export default class AddPropertyModal extends Component {
                 type="text"
                 id="add-property-modal-key-input"
                 className="form-control"
-                placeholder="Enter name"
+                placeholder={T.translate('features.PropertiesEditor.AddProperty.keyPlaceholder')}
                 value={this.state.keyInput}
                 onChange={this.handleKeyChange}
               />
@@ -149,7 +150,7 @@ export default class AddPropertyModal extends Component {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Enter value"
+                placeholder={T.translate('features.PropertiesEditor.AddProperty.valuePlaceholder')}
                 value={this.state.valueInput}
                 onChange={this.handleValueChange}
               />
@@ -162,7 +163,7 @@ export default class AddPropertyModal extends Component {
               onClick={this.onSave}
               disabled={disabled}
             >
-              Add Property
+              {T.translate('features.PropertiesEditor.AddProperty.button')}
             </button>
           </div>
         </ModalBody>
@@ -180,7 +181,7 @@ export default class AddPropertyModal extends Component {
           className="btn btn-secondary"
           onClick={this.toggleModal}
         >
-          Add Property
+          {T.translate('features.PropertiesEditor.AddProperty.button')}
         </button>
 
         {this.renderModal()}
