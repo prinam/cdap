@@ -14,14 +14,20 @@
  * the License.
  */
 
-.app-detailed-view {
-  .iframe-container {
-    height: calc(100% - 26px);
-  }
+import React, { PropTypes } from 'react';
+import PropertiesEditor from 'components/PropertiesEditor';
 
-  .properties-container {
-    height: calc(100% - 55px);
-    padding: 15px 10px;
-    overflow: auto;
-  }
+export default function PropertiesTab({entity}) {
+  return (
+    <div className="properties-container">
+      <PropertiesEditor
+        entityType="datasets"
+        entityId={entity.id}
+      />
+    </div>
+  );
 }
+
+PropertiesTab.propTypes = {
+  entity: PropTypes.object
+};
