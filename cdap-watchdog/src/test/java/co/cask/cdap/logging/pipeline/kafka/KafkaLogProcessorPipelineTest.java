@@ -140,7 +140,8 @@ public class KafkaLogProcessorPipelineTest {
     final TestAppender appender = getAppender(loggerContext.getLogger(Logger.ROOT_LOGGER_NAME),
                                               "Test", TestAppender.class);
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 300, 1048576, 500);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 300L,
+                                                         60000L, 120000L, 1048576, 500L);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
@@ -277,7 +278,8 @@ public class KafkaLogProcessorPipelineTest {
 
     String topic = "metricsPipeline";
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 200);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L,
+                                                         60000L, 120000L, 1048576, 200L);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
@@ -403,7 +405,8 @@ public class KafkaLogProcessorPipelineTest {
 
     String topic = "testMultiAppenders";
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 200);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L,
+                                                         60000L, 120000L, 1048576, 200L);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
@@ -628,7 +631,7 @@ public class KafkaLogProcessorPipelineTest {
 
     @Override
     public Checkpoint getCheckpoint(int partition) throws Exception {
-      return new Checkpoint(-1, -1);
+      return new Checkpoint(-1, -1, -1);
     }
   }
 }
