@@ -53,6 +53,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -76,7 +78,7 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
       return LogSamplers.limitRate(60000);
     }
   }));
-
+  private static final int KAFKA_INIT_OFFSET_RETRY_TIMES = 5;
   private static final int KAFKA_SO_TIMEOUT = 3000;
   private static final double MIN_FREE_FACTOR = 0.5d;
 
@@ -230,24 +232,50 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
    */
   private void initializeOffsets() throws InterruptedException {
     // Setup initial offsets
-    Set<Integer> partitions = config.getPartitions();
-    while (offsets.size() != partitions.size() && !stopped) {
-      for (int partition : partitions) {
+    Set<Integer> partitions = new HashSet<>();
+    partitions.addAll(config.getPartitions());
+    Map<Integer, Integer> partitionRetryCount = new HashMap<>();
+    while (!partitions.isEmpty() && !stopped) {
+      Iterator<Integer> iterator = partitions.iterator();
+      while (iterator.hasNext()) {
+        int partition = iterator.next();
         Checkpoint checkpoint = checkpoints.get(partition);
-        if (checkpoint != null) {
-          long offset = offsetResolver.getMatchingOffset(checkpoint, partition);
-          if (offset > 0) {
-            offsets.put(partition, offset);
-            continue;
-          }
-        }
-
         try {
+          if (checkpoint != null) {
+            long offset = offsetResolver.getMatchingOffset(checkpoint, partition);
+            if (offset > 0) {
+              offsets.put(partition, offset);
+              continue;
+            }
+          }
           // If no checkpoint, fetch from the beginning.
           offsets.put(partition, getLastOffset(partition, kafka.api.OffsetRequest.EarliestTime()));
+          // Remove the partition successfully stored in offsets to avoid unnecessary retry for this partition
+          partitions.remove(partition);
         } catch (Exception e) {
+<<<<<<< HEAD
           OUTAGE_LOG.info("Failed to get Kafka earliest offset in {}:{} for pipeline {}. Will be retried",
                           config.getTopic(), partition, name);
+=======
+          Integer previousRetryCount = partitionRetryCount.get(partition);
+          if (previousRetryCount == null) {
+            partitionRetryCount.put(partition, 1);
+          } else {
+            // (previousRetryCount + 1) is the current number of retries
+            if (previousRetryCount + 1 == KAFKA_INIT_OFFSET_RETRY_TIMES) {
+              LOG.warn("Failed to initialize Kafka offset in {}:{} for pipeline {} after {} retries. " +
+                         "Will skip this partition",
+                        config.getTopic(), partition, name, KAFKA_INIT_OFFSET_RETRY_TIMES, e);
+              // Give up retrying after KAFKA_INIT_OFFSET_RETRY_TIMES failures and remove the partition
+              iterator.remove();
+              break;
+            }
+            // Increment the retry count for current partition if previousRetryCount < 2
+            partitionRetryCount.put(partition, previousRetryCount + 1);
+          }
+          LOG.debug("Failed to initialize Kafka offset offset in {}:{} for pipeline {}. Will be retried",
+                    config.getTopic(), partition, name, e);
+>>>>>>> a378993... add KafkaUtil, handle error with retry
           TimeUnit.SECONDS.sleep(1);
           break;
         }
@@ -485,28 +513,13 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
     if (consumer == null) {
       throw new IOException("No broker to fetch offsets for " + topic + ":" + partition);
     }
-
-    // Fire offset request
-    OffsetRequest request = new OffsetRequest(ImmutableMap.of(
-      new TopicAndPartition(topic, partition),
-      new PartitionOffsetRequestInfo(timestamp, 1)
-    ), kafka.api.OffsetRequest.CurrentVersion(), consumer.clientId());
-
-    OffsetResponse response = consumer.getOffsetsBefore(request);
-
-    // Retrieve offsets from response
-    long[] offsets = response.hasError() ? null : response.offsets(topic, partition);
-    if (offsets == null || offsets.length <= 0) {
-      short errorCode = response.errorCode(topic, partition);
-
+    try {
+      return KafkaUtil.getOffsetByTimestamp(consumer, topic, partition, timestamp);
+    } catch (IOException e) {
       // On error, clear the consumer cache
       kafkaConsumers.remove(consumer.getBrokerInfo());
-      throw new IOException(String.format("Failed to fetch offset for %s:%s with timestamp %d. Error: %d.",
-                                          topic, partition, timestamp, errorCode));
+      throw e;
     }
-
-    LOG.debug("Offset {} fetched for {}:{} with timestamp {}.", offsets[0], topic, partition, timestamp);
-    return offsets[0];
   }
 
   /**
