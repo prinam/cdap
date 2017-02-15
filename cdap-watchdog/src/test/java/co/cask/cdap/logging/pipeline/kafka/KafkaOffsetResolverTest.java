@@ -85,8 +85,8 @@ public class KafkaOffsetResolverTest {
   @Test
   public void testFindOffset() throws Exception {
     String topic = "testOffsetResolver";
-    long replicationDelayMillis = 60000L;
-    long eventOutOfOrderMillis = 120000L;
+    long replicationDelayMillis = 120000L;
+    long eventOutOfOrderMillis = 60000L;
     KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L,
                                                          replicationDelayMillis, eventOutOfOrderMillis,
                                                          1048576, 200L);
@@ -149,7 +149,9 @@ public class KafkaOffsetResolverTest {
       long offset = offsetResolver.getMatchingOffset(new Checkpoint(Long.MAX_VALUE, targetTime, 0), 0);
       // Increment the offset returned by findSmallestOffsetByTime to get the next offset
       long expectedOffset = findSmallestOffsetByTime(events, targetTime) + 1;
-      Assert.assertEquals(expectedOffset, offset);
+      Assert.assertEquals(String.format("Failed to find the expected event %s with the target time from event %s",
+                                        events.get((int) expectedOffset - 1).toString(), events.get(i).toString()),
+                          expectedOffset, offset);
     }
     // Failed to find matching offset for timestamp returns -1
     Assert.assertEquals(-1, offsetResolver.getMatchingOffset(new Checkpoint(Long.MAX_VALUE, Long.MAX_VALUE, 0), 0));
