@@ -39,6 +39,7 @@ import co.cask.cdap.app.program.ProgramDescriptor;
 import co.cask.cdap.app.store.Store;
 import co.cask.cdap.common.ApplicationNotFoundException;
 import co.cask.cdap.common.ProgramNotFoundException;
+import co.cask.cdap.common.ServiceUnavailableException;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data.dataset.SystemDatasetInstantiator;
@@ -74,6 +75,7 @@ import com.google.inject.Inject;
 import org.apache.tephra.RetryStrategies;
 import org.apache.tephra.TransactionFailureException;
 import org.apache.tephra.TransactionSystemClient;
+import org.apache.thrift.TException;
 import org.apache.twill.api.RunId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1060,6 +1062,12 @@ public class DefaultStore implements Store {
       return Transactions.execute(transactional, callable);
     } catch (TransactionFailureException e) {
       throw Transactions.propagate(e);
+    } catch (RuntimeException e) {
+      Throwable t = e.getCause();
+      if (t != null && t instanceof TException) {
+        throw new ServiceUnavailableException(Constants.Service.TRANSACTION, e);
+      }
+      throw e;
     }
   }
 
@@ -1069,6 +1077,12 @@ public class DefaultStore implements Store {
   private void txExecute(Transactional transactional, TxRunnable runnable) {
     try {
       transactional.execute(runnable);
+    } catch (RuntimeException e) {
+      Throwable t = e.getCause();
+      if (t != null && t instanceof TException) {
+        throw new ServiceUnavailableException(Constants.Service.TRANSACTION, e);
+      }
+      throw e;
     } catch (TransactionFailureException e) {
       throw Transactions.propagate(e);
     }
