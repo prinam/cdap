@@ -115,6 +115,7 @@ export default class MarketActionsContainer extends Component {
           onClose={this.closeWizard.bind(this)}
           wizardType={this.state.wizard.actionType}
           input={{action: this.state.wizard.action, package: this.context.entity}}
+          usedInMarket={true}
         />
       </div>
     );

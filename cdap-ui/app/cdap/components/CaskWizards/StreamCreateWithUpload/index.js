@@ -36,7 +36,6 @@ export default class StreamCreateWithUploadWizard extends Component {
       showWizard: this.props.isOpen
     };
     this.eventEmitter = ee(ee);
-    this.successInfo = {};
   }
   toggleWizard(returnResult) {
     if (this.state.showWizard) {
@@ -101,11 +100,15 @@ export default class StreamCreateWithUploadWizard extends Component {
       linkLabel = T.translate('features.Wizard.StreamCreate.secondaryCallToAction.queryStream');
       linkUrl = `/cdap/ns/${namespace}/streams/${streamId}?modalToOpen=explore`;
     }
-    this.successInfo.message = `${defaultSuccessMessage} "${streamId}".`;
-    this.successInfo.buttonLabel = buttonLabel;
-    this.successInfo.buttonUrl = `/cdap/ns/${namespace}/streams/${streamId}`;
-    this.successInfo.linkLabel = linkLabel;
-    this.successInfo.linkUrl = linkUrl;
+    this.setState({
+      successInfo: {
+        message: `${defaultSuccessMessage} "${streamId}".`,
+        buttonLabel,
+        buttonUrl: `/cdap/ns/${namespace}/streams/${streamId}`,
+        linkLabel,
+        linkUrl
+      }
+    });
   }
   render() {
     let input = this.props.input || {};
@@ -126,7 +129,7 @@ export default class StreamCreateWithUploadWizard extends Component {
                 wizardConfig={CreateStreamUploadWizardConfig}
                 wizardType="StreamCreate"
                 onSubmit={this.createStream.bind(this)}
-                successInfo={this.successInfo}
+                successInfo={this.state.successInfo}
                 onClose={this.toggleWizard.bind(this)}
                 store={CreateStreamWithUploadStore}/>
             </WizardModal>
