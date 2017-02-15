@@ -245,6 +245,18 @@ public abstract class BaseHiveExploreService extends AbstractIdleService impleme
       conf.set(HIVE_METASTORE_TOKEN_KEY, HiveAuthFactory.HS2_CLIENT_TOKEN);
     }
 
+    // workaround to allow CDAP explore to modify params of session conf
+    String whiteListAppend = conf.getVar(HiveConf.ConfVars.HIVE_AUTHORIZATION_SQL_STD_AUTH_CONFIG_WHITELIST_APPEND);
+    String paramsExploreModifies =
+      "spark.*|explore.*|mapreduce.*|hive.*|" + CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION;
+    if (whiteListAppend != null && !whiteListAppend.trim().isEmpty()) {
+      // if user has configured some value for this, we must append to the regex
+      whiteListAppend = whiteListAppend + "|" + paramsExploreModifies;
+    } else {
+      whiteListAppend = paramsExploreModifies;
+    }
+    conf.setVar(HiveConf.ConfVars.HIVE_AUTHORIZATION_SQL_STD_AUTH_CONFIG_WHITELIST_APPEND, whiteListAppend);
+
     // We override this param due to the change in HIVE-14383. Otherwise, the hive job will be launched as the
     // 'hive' user (or fail to even launch, if on ClouderaManager). See CDAP-8367 for more details.
     conf.set(CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION,
