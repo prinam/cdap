@@ -33,7 +33,6 @@ export default class ApplicationUploadWizard extends Component {
     this.state = {
       showWizard: props.isOpen || false
     };
-    this.successInfo = {};
   }
   componentWillUnmount() {
     ApplicationUploadStore.dispatch({
@@ -42,7 +41,9 @@ export default class ApplicationUploadWizard extends Component {
   }
   onSubmit() {
     return UploadApplication().map((res) => {
-      this.buildSuccessInfo(res);
+      if (!this.props.usedInMarket) {
+        this.buildSuccessInfo(res);
+      }
       this.eventEmitter.emit(globalEvents.APPUPLOAD);
       return res;
     });
@@ -62,11 +63,15 @@ export default class ApplicationUploadWizard extends Component {
     let defaultSuccessMessage = T.translate('features.Wizard.ApplicationUpload.success');
     let buttonLabel = T.translate('features.Wizard.ApplicationUpload.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
-    this.successInfo.message = `${defaultSuccessMessage} "${appName}".`;
-    this.successInfo.buttonLabel = buttonLabel;
-    this.successInfo.buttonUrl = `/cdap/ns/${namespace}/apps/${appName}`;
-    this.successInfo.linkLabel = linkLabel;
-    this.successInfo.linkUrl = `/cdap/ns/${namespace}`;
+    this.setState({
+      successInfo: {
+        message: `${defaultSuccessMessage} "${appName}".`,
+        buttonLabel,
+        buttonUrl: `/cdap/ns/${namespace}/apps/${appName}`,
+        linkLabel,
+        linkUrl: `/cdap/ns/${namespace}`
+      }
+    });
   }
   render() {
     let input = this.props.input;
@@ -84,7 +89,7 @@ export default class ApplicationUploadWizard extends Component {
           wizardType="ApplicationUpload"
           store={ApplicationUploadStore}
           onSubmit={this.onSubmit.bind(this)}
-          successInfo={this.successInfo}
+          successInfo={this.state.successInfo}
           onClose={this.toggleWizard.bind(this)}/>
       </WizardModal>
     );
@@ -94,5 +99,6 @@ export default class ApplicationUploadWizard extends Component {
 ApplicationUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   onClose: PropTypes.func,
-  input: PropTypes.any
+  input: PropTypes.any,
+  usedInMarket: PropTypes.bool
 };

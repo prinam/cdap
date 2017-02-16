@@ -32,7 +32,6 @@ export default class ArtifactUploadWizard extends Component {
     this.state = {
       showWizard: this.props.isOpen
     };
-    this.successInfo = {};
   }
   componentWillUnmount() {
     ArtifactUploadStore.dispatch({
@@ -41,7 +40,9 @@ export default class ArtifactUploadWizard extends Component {
   }
 
   onSubmit() {
-    this.buildSuccessInfo();
+    if (!this.props.isMarket) {
+      this.buildSuccessInfo();
+    }
     return ArtifactUploadActionCreator.uploadArtifact();
   }
 
@@ -66,12 +67,16 @@ export default class ArtifactUploadWizard extends Component {
     let subtitle = T.translate('features.Wizard.ArtifactUpload.subtitle');
     let buttonLabel = T.translate('features.Wizard.ArtifactUpload.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
-    this.successInfo.message = `${defaultSuccessMessage} "${name}".`;
-    this.successInfo.subtitle = subtitle;
-    this.successInfo.buttonLabel = buttonLabel;
-    this.successInfo.buttonUrl = `/hydrator/ns/${namespace}/studio`;
-    this.successInfo.linkLabel = linkLabel;
-    this.successInfo.linkUrl = `/cdap/ns/${namespace}`;
+    this.setState({
+      successInfo: {
+        message: `${defaultSuccessMessage} "${name}".`,
+        subtitle,
+        buttonLabel,
+        buttonUrl: `/hydrator/ns/${namespace}/studio`,
+        linkLabel,
+        linkUrl: `/cdap/ns/${namespace}`
+      }
+    });
   }
   render() {
     let input = this.props.input;
@@ -91,7 +96,7 @@ export default class ArtifactUploadWizard extends Component {
           wizardType="ArtifactUpload"
           store={ArtifactUploadStore}
           onSubmit={this.onSubmit.bind(this)}
-          successInfo={this.successInfo}
+          successInfo={this.state.successInfo}
           onClose={this.toggleWizard.bind(this)}
         />
       </WizardModal>
@@ -115,5 +120,5 @@ ArtifactUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  isMarket: PropTypes.bool
+  isMarket: PropTypes.bool,
 };

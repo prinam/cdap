@@ -32,7 +32,6 @@ export default class UploadDataWizard extends Component {
     this.state = {
       showWizard: this.props.isOpen
     };
-    this.successInfo = {};
     this.setDefaultConfig();
     this.prepareInputForSteps();
   }
@@ -50,7 +49,9 @@ export default class UploadDataWizard extends Component {
     let fileContents = state.viewdata.data;
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let authToken = cookie.load('CDAP_Auth_Token');
-    this.buildSuccessInfo(packagename, streamId, currentNamespace);
+    if (!this.props.usedInMarket) {
+      this.buildSuccessInfo(packagename, streamId, currentNamespace);
+    }
 
     return UploadDataActionCreator.uploadData({
       url: `/namespaces/${currentNamespace}/streams/${streamId}/batch`,
@@ -108,12 +109,16 @@ export default class UploadDataWizard extends Component {
     let subtitle = T.translate('features.Wizard.UploadData.subtitle');
     let buttonLabel = T.translate('features.Wizard.UploadData.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
-    this.successInfo.message = `${defaultSuccessMessage} "${datapackName}"`;
-    this.successInfo.subtitle = `${subtitle} "${streamId}".`;
-    this.successInfo.buttonLabel = buttonLabel;
-    this.successInfo.buttonUrl = `/cdap/ns/${namespace}/streams/${streamId}`;
-    this.successInfo.linkLabel = linkLabel;
-    this.successInfo.linkUrl = `/cdap/ns/${namespace}`;
+    this.setState({
+      successInfo: {
+        message: `${defaultSuccessMessage} "${datapackName}".`,
+        subtitle: `${subtitle} "${streamId}".`,
+        buttonLabel,
+        buttonUrl: `/cdap/ns/${namespace}/streams/${streamId}`,
+        linkLabel,
+        linkUrl: `/cdap/ns/${namespace}`
+      }
+    });
   }
   render() {
     let input = this.props.input;
@@ -131,7 +136,7 @@ export default class UploadDataWizard extends Component {
           wizardConfig={UploadDataWizardConfig}
           wizardType="UploadData"
           store={UploadDataStore}
-          successInfo={this.successInfo}
+          successInfo={this.state.successInfo}
           onSubmit={this.onSubmit.bind(this)}
           onClose={this.toggleWizard.bind(this)}/>
       </WizardModal>
@@ -141,5 +146,6 @@ export default class UploadDataWizard extends Component {
 UploadDataWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
-  onClose: PropTypes.func
+  onClose: PropTypes.func,
+  usedInMarket: PropTypes.bool
 };

@@ -149,5 +149,4 @@ StreamCreateWizard.propTypes = {
   input: PropTypes.any,
   onClose: PropTypes.func,
   withUploadStep: PropTypes.bool,
-  usedInMarket: PropTypes.bool
 };

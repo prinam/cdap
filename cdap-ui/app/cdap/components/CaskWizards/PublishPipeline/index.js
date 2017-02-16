@@ -37,7 +37,6 @@ export default class PublishPipelineWizard extends Component {
       showWizard: this.props.isOpen
     };
 
-    this.successInfo = {};
     this.setDefaultConfig();
 
     this.eventEmitter = ee(ee);
@@ -79,11 +78,15 @@ export default class PublishPipelineWizard extends Component {
     let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
     let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
-    this.successInfo.message = `${defaultSuccessMessage} "${name}".`;
-    this.successInfo.buttonLabel = buttonLabel;
-    this.successInfo.buttonUrl = `/hydrator/ns/${namespace}/studio?draftId=${draftId}`;
-    this.successInfo.linkLabel = linkLabel;
-    this.successInfo.linkUrl = `/cdap/ns/${namespace}`;
+    this.setState({
+      successInfo: {
+        message: `${defaultSuccessMessage} "${name}".`,
+        buttonLabel,
+        buttonUrl: `/hydrator/ns/${namespace}/studio?draftId=${draftId}`,
+        linkLabel,
+        linkUrl: `/cdap/ns/${namespace}`
+      }
+    });
   }
   toggleWizard(returnResult) {
     if (this.state.showWizard) {
@@ -119,7 +122,9 @@ export default class PublishPipelineWizard extends Component {
           return MyUserStoreApi.set({}, res.property);
         })
         .map((res) => {
-          this.buildSuccessInfo(name, draftId, currentNamespace);
+          if (!this.props.usedInMarket) {
+            this.buildSuccessInfo(name, draftId, currentNamespace);
+          }
           this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
           return res;
         });
@@ -159,7 +164,7 @@ export default class PublishPipelineWizard extends Component {
                 wizardConfig={PublishPipelineWizardConfig}
                 wizardType="PublishPipeline"
                 onSubmit={this.publishPipeline.bind(this)}
-                successInfo={this.successInfo}
+                successInfo={this.state.successInfo}
                 onClose={this.toggleWizard.bind(this)}
                 store={PublishPipelineWizardStore}
               />
@@ -174,5 +179,6 @@ export default class PublishPipelineWizard extends Component {
 PublishPipelineWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
-  onClose: PropTypes.func
+  onClose: PropTypes.func,
+  usedInMarket: PropTypes.bool
 };
