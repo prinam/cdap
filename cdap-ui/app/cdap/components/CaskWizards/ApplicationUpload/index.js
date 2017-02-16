@@ -41,7 +41,7 @@ export default class ApplicationUploadWizard extends Component {
   }
   onSubmit() {
     return UploadApplication().map((res) => {
-      if (!this.props.usedInMarket) {
+      if (!this.props.usedInMarket || this.props.isLastStepInMarket) {
         this.buildSuccessInfo(res);
       }
       this.eventEmitter.emit(globalEvents.APPUPLOAD);
@@ -100,5 +100,6 @@ ApplicationUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   onClose: PropTypes.func,
   input: PropTypes.any,
-  usedInMarket: PropTypes.bool
+  usedInMarket: PropTypes.bool,
+  isLastStepInMarket: PropTypes.bool
 };

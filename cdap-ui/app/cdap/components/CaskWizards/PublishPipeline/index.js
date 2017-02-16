@@ -74,15 +74,20 @@ export default class PublishPipelineWizard extends Component {
       }
     });
   }
-  buildSuccessInfo(name, draftId, namespace) {
+  buildSuccessInfo(name, namespace, draftId) {
     let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
-    let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction');
+    let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.view');
+    let buttonUrl = `/pipelines/ns/${namespace}/view/${name}`;
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
+    if (this.props.input.action.type === 'create_pipeline_draft') {
+      buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.customize');
+      buttonUrl = `/pipelines/ns/${namespace}/studio?draftId=${draftId}`;
+    }
     this.setState({
       successInfo: {
         message: `${defaultSuccessMessage} "${name}".`,
         buttonLabel,
-        buttonUrl: `/pipelines/ns/${namespace}/studio?draftId=${draftId}`,
+        buttonUrl,
         linkLabel,
         linkUrl: `/cdap/ns/${namespace}`
       }
@@ -122,9 +127,7 @@ export default class PublishPipelineWizard extends Component {
           return MyUserStoreApi.set({}, res.property);
         })
         .map((res) => {
-          if (!this.props.usedInMarket) {
-            this.buildSuccessInfo(name, draftId, currentNamespace);
-          }
+          this.buildSuccessInfo(name, currentNamespace, draftId);
           this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
           return res;
         });
@@ -140,6 +143,9 @@ export default class PublishPipelineWizard extends Component {
           }
         )
         .map((res) => {
+          if (!this.props.usedInMarket || this.props.isLastStepInMarket) {
+            this.buildSuccessInfo(name, currentNamespace);
+          }
           this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
           return res;
         });
@@ -180,5 +186,6 @@ PublishPipelineWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  usedInMarket: PropTypes.bool
+  usedInMarket: PropTypes.bool,
+  isLastStepInMarket: PropTypes.bool
 };

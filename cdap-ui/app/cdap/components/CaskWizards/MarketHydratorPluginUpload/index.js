@@ -34,7 +34,6 @@ export default class MarketHydratorPluginUpload extends Component {
     this.state = {
       showWizard: this.props.isOpen
     };
-    this.successInfo = {};
   }
 
   componentDidMount() {
@@ -68,7 +67,9 @@ export default class MarketHydratorPluginUpload extends Component {
   }
 
   onSubmit() {
-    this.buildSuccessInfo();
+    if (this.props.isLastStepInMarket) {
+      this.buildSuccessInfo();
+    }
     return ArtifactUploadActionCreator
       .uploadArtifact()
       .flatMap(() => ArtifactUploadActionCreator.uploadConfigurationJson());
@@ -91,12 +92,16 @@ export default class MarketHydratorPluginUpload extends Component {
     let subtitle = T.translate('features.Wizard.PluginArtifact.subtitle');
     let buttonLabel = T.translate('features.Wizard.PluginArtifact.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
-    this.successInfo.message = `${defaultSuccessMessage} "${name}".`;
-    this.successInfo.subtitle = subtitle;
-    this.successInfo.buttonLabel = buttonLabel;
-    this.successInfo.buttonUrl = `/pipelines/ns/${namespace}/studio`;
-    this.successInfo.linkLabel = linkLabel;
-    this.successInfo.linkUrl = `/cdap/ns/${namespace}`;
+    this.setState({
+      successInfo: {
+        message: `${defaultSuccessMessage} "${name}".`,
+        subtitle,
+        buttonLabel,
+        buttonUrl: `/pipelines/ns/${namespace}/studio`,
+        linkLabel,
+        linkUrl: `/cdap/ns/${namespace}`
+      }
+    });
   }
 
   render() {
@@ -113,7 +118,7 @@ export default class MarketHydratorPluginUpload extends Component {
           wizardType="ArtifactUpload"
           store={PluginArtifactUploadStore}
           onSubmit={this.onSubmit.bind(this)}
-          successInfo={this.successInfo}
+          successInfo={this.state.successInfo}
           onClose={this.toggleWizard.bind(this)}/>
       </WizardModal>
     );
@@ -131,5 +136,6 @@ MarketHydratorPluginUpload.defaultProps = {
 MarketHydratorPluginUpload.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
-  onClose: PropTypes.func
+  onClose: PropTypes.func,
+  isLastStepInMarket: PropTypes.bool
 };

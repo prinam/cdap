@@ -22,7 +22,7 @@ import {MyMarketApi} from 'api/market';
 import find from 'lodash/find';
 import T from 'i18n-react';
 
-export default function MarketArtifactUploadWizard({input, onClose, isOpen}) {
+export default function MarketArtifactUploadWizard({input, onClose, isOpen, isLastStepInMarket}) {
   const args = input.action.arguments;
   let config = find(args, {name: 'config'});
   input.headerLabel = T.translate('features.Wizard.ArtifactUpload.headerlabel');
@@ -58,6 +58,7 @@ export default function MarketArtifactUploadWizard({input, onClose, isOpen}) {
       input={input}
       onClose={onClose}
       isMarket={true}
+      isLastStepInMarket={isLastStepInMarket}
     />
   );
 }
@@ -65,5 +66,6 @@ export default function MarketArtifactUploadWizard({input, onClose, isOpen}) {
 MarketArtifactUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
-  onClose: PropTypes.func
+  onClose: PropTypes.func,
+  isLastStepInMarket: PropTypes.bool
 };

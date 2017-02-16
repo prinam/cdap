@@ -46,7 +46,9 @@ export default class MarketActionsContainer extends Component {
         }
       });
       if (this.state.wizard.actionIndex === this.props.actions.length - 1) {
-        this.props.onActionsComplete();
+        if (this.props.onActionsComplete) {
+          this.props.onActionsComplete();
+        }
       }
       return;
     }
@@ -116,6 +118,7 @@ export default class MarketActionsContainer extends Component {
           wizardType={this.state.wizard.actionType}
           input={{action: this.state.wizard.action, package: this.context.entity}}
           usedInMarket={true}
+          isLastStepInMarket={this.state.wizard.actionIndex === this.props.actions.length - 1}
         />
       </div>
     );

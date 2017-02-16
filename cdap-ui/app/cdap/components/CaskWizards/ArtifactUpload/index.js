@@ -40,7 +40,8 @@ export default class ArtifactUploadWizard extends Component {
   }
 
   onSubmit() {
-    if (!this.props.isMarket) {
+    console.log(this.props.isLastStepInMarket);
+    if (!this.props.isMarket || this.props.isLastStepInMarket) {
       this.buildSuccessInfo();
     }
     return ArtifactUploadActionCreator.uploadArtifact();
@@ -121,4 +122,5 @@ ArtifactUploadWizard.propTypes = {
   input: PropTypes.any,
   onClose: PropTypes.func,
   isMarket: PropTypes.bool,
+  isLastStepInMarket: PropTypes.bool
 };
