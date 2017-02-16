@@ -94,7 +94,7 @@ export default class MarketHydratorPluginUpload extends Component {
     this.successInfo.message = `${defaultSuccessMessage} "${name}".`;
     this.successInfo.subtitle = subtitle;
     this.successInfo.buttonLabel = buttonLabel;
-    this.successInfo.buttonUrl = `/hydrator/ns/${namespace}/studio`;
+    this.successInfo.buttonUrl = `/pipelines/ns/${namespace}/studio`;
     this.successInfo.linkLabel = linkLabel;
     this.successInfo.linkUrl = `/cdap/ns/${namespace}`;
   }

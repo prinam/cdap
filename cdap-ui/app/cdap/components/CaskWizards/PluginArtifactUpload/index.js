@@ -67,7 +67,7 @@ export default class PluginArtifactUploadWizard extends Component {
         message: `${defaultSuccessMessage} "${name}".`,
         subtitle,
         buttonLabel,
-        buttonUrl: `/hydrator/ns/${namespace}/studio`,
+        buttonUrl: `/pipelines/ns/${namespace}/studio`,
         linkLabel,
         linkUrl: `/cdap/ns/${namespace}`
       }

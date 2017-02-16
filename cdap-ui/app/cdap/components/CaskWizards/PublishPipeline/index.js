@@ -82,7 +82,7 @@ export default class PublishPipelineWizard extends Component {
       successInfo: {
         message: `${defaultSuccessMessage} "${name}".`,
         buttonLabel,
-        buttonUrl: `/hydrator/ns/${namespace}/studio?draftId=${draftId}`,
+        buttonUrl: `/pipelines/ns/${namespace}/studio?draftId=${draftId}`,
         linkLabel,
         linkUrl: `/cdap/ns/${namespace}`
       }
