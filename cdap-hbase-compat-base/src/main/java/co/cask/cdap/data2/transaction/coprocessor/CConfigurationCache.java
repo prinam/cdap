@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableNotFoundException;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -38,20 +39,44 @@ public class CConfigurationCache extends AbstractIdleService {
   private static final Long DEFAULT_CCONF_UPDATE_PERIOD = TimeUnit.MINUTES.toMillis(5);
 
   private final CConfigurationReader cConfReader;
+  private final String maxLifetimeProperty;
+  private final int defaultMaxLifetime;
 
   private volatile Thread refreshThread;
   private volatile CConfiguration cConf;
   private volatile boolean stopped;
+
+  private volatile Configuration conf;
+  private volatile Long txMaxLifetimeMillis;
+
   private long cConfUpdatePeriodInMillis = DEFAULT_CCONF_UPDATE_PERIOD;
   private long lastUpdated;
 
+  // TODO: Remove this constructor once other compat modules switch to use the other constructor
   public CConfigurationCache(Configuration hConf, String sysConfigTablePrefix) {
+    this(hConf, sysConfigTablePrefix, "", 0);
+  }
+
+  public CConfigurationCache(Configuration hConf, String sysConfigTablePrefix, String maxLifetimeProperty,
+                             int defaultMaxLifetime) {
     this.cConfReader = new CConfigurationReader(hConf, sysConfigTablePrefix);
+    this.maxLifetimeProperty = maxLifetimeProperty;
+    this.defaultMaxLifetime = defaultMaxLifetime;
   }
 
   @Nullable
   public CConfiguration getCConf() {
     return cConf;
+  }
+
+  @Nullable
+  public Configuration getConf() {
+    return conf;
+  }
+
+  @Nullable
+  public Long getTxMaxLifetimeMillis() {
+    return txMaxLifetimeMillis;
   }
 
   public boolean isAlive() {
@@ -84,7 +109,14 @@ public class CConfigurationCache extends AbstractIdleService {
             try {
               CConfiguration newCConf = cConfReader.read();
               if (newCConf != null) {
+                Configuration newConf = new Configuration();
+                for (Map.Entry<String, String> entry : newCConf) {
+                  newConf.set(entry.getKey(), entry.getValue());
+                }
+                // Make the cConf properties available in both formats
                 cConf = newCConf;
+                conf = newConf;
+                txMaxLifetimeMillis = TimeUnit.SECONDS.toMillis(conf.getInt(maxLifetimeProperty, defaultMaxLifetime));
                 lastUpdated = now;
                 cConfUpdatePeriodInMillis = cConf.getLong(CCONF_UPDATE_PERIOD, DEFAULT_CCONF_UPDATE_PERIOD);
               }

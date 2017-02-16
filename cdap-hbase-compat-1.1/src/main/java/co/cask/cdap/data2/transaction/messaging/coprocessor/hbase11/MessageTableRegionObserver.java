@@ -137,25 +137,8 @@ public class MessageTableRegionObserver extends BaseRegionObserver {
     LOG.info("preCompact, filter using MessageDataFilter");
     TransactionVisibilityState txVisibilityState = txStateCache.getLatestState();
 
-    if (pruneEnable == null) {
-      CConfiguration cConf = topicMetadataCache.getCConfiguration();
-      if (cConf != null) {
-        pruneEnable = cConf.getBoolean(TxConstants.TransactionPruning.PRUNE_ENABLE,
-                                       TxConstants.TransactionPruning.DEFAULT_PRUNE_ENABLE);
-        if (Boolean.TRUE.equals(pruneEnable)) {
-          String pruneTable = cConf.get(TxConstants.TransactionPruning.PRUNE_STATE_TABLE,
-                                        TxConstants.TransactionPruning.DEFAULT_PRUNE_STATE_TABLE);
-          long pruneFlushInterval = TimeUnit.SECONDS.toMillis(
-            cConf.getLong(TxConstants.TransactionPruning.PRUNE_FLUSH_INTERVAL,
-                          TxConstants.TransactionPruning.DEFAULT_PRUNE_FLUSH_INTERVAL));
-          compactionState = new CompactionState(c.getEnvironment(), TableName.valueOf(pruneTable), pruneFlushInterval);
-          LOG.debug("Automatic invalid list pruning is enabled. Compaction state will be recorded in table " +
-                      pruneTable);
-        }
-      }
-    }
-
-    if (Boolean.TRUE.equals(pruneEnable)) {
+    reloadPruneState(c.getEnvironment());
+    if (compactionState != null) {
       // Record tx state before the compaction
       compactionState.record(request, txVisibilityState);
     }
@@ -174,6 +157,59 @@ public class MessageTableRegionObserver extends BaseRegionObserver {
     // Persist the compaction state after a successful compaction
     if (compactionState != null) {
       compactionState.persist();
+    }
+  }
+
+  private void reloadPruneState(RegionCoprocessorEnvironment env) {
+    if (pruneEnable == null) {
+      // If prune enable has never been initialized, try to do so now
+      initializePruneState(env);
+    } else {
+      CConfiguration conf = topicMetadataCache.getCConfiguration();
+      if (conf != null) {
+        boolean newPruneEnable = conf.getBoolean(TxConstants.TransactionPruning.PRUNE_ENABLE,
+                                                 TxConstants.TransactionPruning.DEFAULT_PRUNE_ENABLE);
+        if (newPruneEnable != pruneEnable) {
+          // pruning enable has been changed, resetting prune state
+          if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("Transaction Invalid List pruning feature is set to %s now for region %s.",
+                                    newPruneEnable, env.getRegionInfo().getRegionNameAsString()));
+          }
+          resetPruneState();
+          initializePruneState(env);
+        }
+      }
+    }
+  }
+
+  private void initializePruneState(RegionCoprocessorEnvironment env) {
+    CConfiguration conf = topicMetadataCache.getCConfiguration();
+    if (conf != null) {
+      pruneEnable = conf.getBoolean(TxConstants.TransactionPruning.PRUNE_ENABLE,
+                                    TxConstants.TransactionPruning.DEFAULT_PRUNE_ENABLE);
+
+      if (Boolean.TRUE.equals(pruneEnable)) {
+        String pruneTable = conf.get(TxConstants.TransactionPruning.PRUNE_STATE_TABLE,
+                                     TxConstants.TransactionPruning.DEFAULT_PRUNE_STATE_TABLE);
+        long pruneFlushInterval = TimeUnit.SECONDS.toMillis(conf.getLong(
+          TxConstants.TransactionPruning.PRUNE_FLUSH_INTERVAL,
+          TxConstants.TransactionPruning.DEFAULT_PRUNE_FLUSH_INTERVAL));
+
+        compactionState = new CompactionState(env, TableName.valueOf(pruneTable), pruneFlushInterval);
+        if (LOG.isDebugEnabled()) {
+          LOG.debug(String.format("Automatic invalid list pruning is enabled for table %s. Compaction state " +
+                                    "will be recorded in table %s",
+                                  env.getRegionInfo().getTable().getNameWithNamespaceInclAsString(), pruneTable));
+        }
+      }
+    }
+  }
+
+  private void resetPruneState() {
+    pruneEnable = false;
+    if (compactionState != null) {
+      compactionState.stop();
+      compactionState = null;
     }
   }
 

@@ -16,7 +16,6 @@
 
 package co.cask.cdap.data2.transaction.coprocessor.hbase11;
 
-import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseTable;
 import co.cask.cdap.data2.increment.hbase11.IncrementTxFilter;
@@ -32,9 +31,14 @@ import org.apache.hadoop.hbase.CoprocessorEnvironment;
 import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.client.OperationWithAttributes;
+import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.coprocessor.RegionCoprocessorEnvironment;
 import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.regionserver.InternalScanner;
+import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.ScanType;
+import org.apache.hadoop.hbase.regionserver.Store;
+import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.tephra.Transaction;
 import org.apache.tephra.TxConstants;
@@ -44,7 +48,7 @@ import org.apache.tephra.hbase.coprocessor.TransactionProcessor;
 import org.apache.tephra.util.TxUtils;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -83,55 +87,85 @@ public class DefaultTransactionProcessor extends TransactionProcessor {
   }
 
   @Override
+  public void postFlush(ObserverContext<RegionCoprocessorEnvironment> e) throws IOException {
+    reloadPruneState(e.getEnvironment());
+    super.postFlush(e);
+  }
+
+  @Override
+  public InternalScanner preCompactScannerOpen(ObserverContext<RegionCoprocessorEnvironment> c, Store store,
+                                               List<? extends KeyValueScanner> scanners, ScanType scanType,
+                                               long earliestPutTs, InternalScanner s,
+                                               CompactionRequest request) throws IOException {
+    reloadPruneState(c.getEnvironment());
+    return super.preCompactScannerOpen(c, store, scanners, scanType, earliestPutTs, s, request);
+  }
+
+  @Override
   protected void ensureValidTxLifetime(RegionCoprocessorEnvironment env, OperationWithAttributes op,
                                        @Nullable Transaction tx) throws IOException {
     if (tx == null) {
       return;
     }
 
-    long maxLifetimeMillis;
-    if (txMaxLifetimeMillis == null) {
-      Configuration conf = getConfiguration(env);
-      if (conf != null) {
-        this.txMaxLifetimeMillis = TimeUnit.SECONDS.toMillis(conf.getInt(TxConstants.Manager.CFG_TX_MAX_LIFETIME,
-                                                                         TxConstants.Manager.DEFAULT_TX_MAX_LIFETIME));
-        maxLifetimeMillis = this.txMaxLifetimeMillis;
-      } else {
+    long currMaxLifetimeinMillis;
+    Long maxLifetimeFromConf = cConfCache.getTxMaxLifetimeMillis();
+    if (maxLifetimeFromConf == null) {
+      if (txMaxLifetimeMillis == null) {
         // Get maxLifetimeMillis from transaction attributes
         byte[] maxLifetimeBytes = op.getAttribute(HBaseTable.TX_MAX_LIFETIME_MILLIS_KEY);
         if (maxLifetimeBytes != null) {
-          maxLifetimeMillis = Bytes.toLong(maxLifetimeBytes);
+          currMaxLifetimeinMillis = Bytes.toLong(maxLifetimeBytes);
         } else {
+          // If maxLifetimeMillis could not be found anywhere, just use the default value and log a warning.
           LOG.warn("txMaxLifetimeMillis is not available in client's operation attributes. " +
                      "Defaulting to default tx_max_lifetime");
-          maxLifetimeMillis = TimeUnit.SECONDS.toMillis(TxConstants.Manager.DEFAULT_TX_MAX_LIFETIME);
+          currMaxLifetimeinMillis = TimeUnit.SECONDS.toMillis(TxConstants.Manager.DEFAULT_TX_MAX_LIFETIME);
         }
+      } else {
+        // If conf is null, but we have a valid value from the previous check, use that value.
+        currMaxLifetimeinMillis = txMaxLifetimeMillis;
       }
     } else {
-      maxLifetimeMillis = txMaxLifetimeMillis;
+      // If conf is available, set the value from it
+      currMaxLifetimeinMillis = maxLifetimeFromConf;
+      this.txMaxLifetimeMillis = currMaxLifetimeinMillis;
     }
 
     boolean validLifetime =
-      TxUtils.getTimestamp(tx.getTransactionId()) + maxLifetimeMillis > System.currentTimeMillis();
+      TxUtils.getTimestamp(tx.getTransactionId()) + currMaxLifetimeinMillis > System.currentTimeMillis();
     if (!validLifetime) {
       throw new DoNotRetryIOException(String.format("Transaction %s has exceeded max lifetime %s ms",
-                                                    tx.getTransactionId(), maxLifetimeMillis));
+                                                    tx.getTransactionId(), currMaxLifetimeinMillis));
+    }
+  }
+
+  private void reloadPruneState(RegionCoprocessorEnvironment env) {
+    if (pruneEnable == null) {
+      // If prune enable has never been initialized, try to do so now
+      initializePruneState(env);
+    } else {
+      Configuration conf = getConfiguration(env);
+      if (conf != null) {
+        boolean newPruneEnable = conf.getBoolean(TxConstants.TransactionPruning.PRUNE_ENABLE,
+                                                 TxConstants.TransactionPruning.DEFAULT_PRUNE_ENABLE);
+        if (newPruneEnable != pruneEnable) {
+          // pruning enable has been changed, resetting prune state
+          if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("Transaction Invalid List pruning feature is set to %s now for region %s.",
+                                    newPruneEnable, env.getRegionInfo().getRegionNameAsString()));
+          }
+          resetPruneState();
+          initializePruneState(env);
+        }
+      }
     }
   }
 
   @Override
   @Nullable
   protected Configuration getConfiguration(CoprocessorEnvironment env) {
-    CConfiguration cConf = cConfCache.getCConf();
-    if (cConf == null) {
-      return null;
-    }
-
-    Configuration hConf = new Configuration();
-    for (Map.Entry<String, String> entry : cConf) {
-      hConf.set(entry.getKey(), entry.getValue());
-    }
-    return hConf;
+    return cConfCache.getConf();
   }
 
   @Override
