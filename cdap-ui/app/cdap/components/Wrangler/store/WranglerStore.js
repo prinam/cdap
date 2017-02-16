@@ -14,18 +14,3 @@
  * the License.
  */
 
-import React, { Component } from 'react';
-import Wrangler from 'components/Wrangler';
-
-export default class Experimental extends Component {
-  constructor(props) {
-    super(props);
-
-  }
-
-  render() {
-    return (
-      <Wrangler />
-    );
-  }
-}

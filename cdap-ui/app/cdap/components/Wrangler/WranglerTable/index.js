@@ -15,9 +15,8 @@
  */
 
 import React, { Component } from 'react';
-import Wrangler from 'components/Wrangler';
 
-export default class Experimental extends Component {
+export default class WranglerTable extends Component {
   constructor(props) {
     super(props);
 
@@ -25,7 +24,9 @@ export default class Experimental extends Component {
 
   render() {
     return (
-      <Wrangler />
+      <div className="col-xs-9 wrangler-data">
+        <h4>data table</h4>
+      </div>
     );
   }
 }

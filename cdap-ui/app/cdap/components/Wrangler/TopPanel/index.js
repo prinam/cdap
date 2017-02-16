@@ -15,9 +15,9 @@
  */
 
 import React, { Component } from 'react';
-import Wrangler from 'components/Wrangler';
+require('./TopPanel.scss');
 
-export default class Experimental extends Component {
+export default class WranglerTopPanel extends Component {
   constructor(props) {
     super(props);
 
@@ -25,7 +25,15 @@ export default class Experimental extends Component {
 
   render() {
     return (
-      <Wrangler />
+      <div className="top-panel">
+        <span>
+          <strong>Columns: 10000</strong>
+        </span>
+
+        <span>
+          <strong>Rows: 1000000</strong>
+        </span>
+      </div>
     );
   }
 }

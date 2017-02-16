@@ -15,9 +15,8 @@
  */
 
 import React, { Component } from 'react';
-import Wrangler from 'components/Wrangler';
 
-export default class Experimental extends Component {
+export default class WranglerCLI extends Component {
   constructor(props) {
     super(props);
 
@@ -25,7 +24,15 @@ export default class Experimental extends Component {
 
   render() {
     return (
-      <Wrangler />
+      <div className="command-line">
+        <div className="power-mode">
+          Power Mode
+        </div>
+
+        <div className="input-container">
+          <input type="text" className="form-control"/>
+        </div>
+      </div>
     );
   }
 }

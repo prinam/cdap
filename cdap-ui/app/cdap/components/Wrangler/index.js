@@ -14,10 +14,15 @@
  * the License.
  */
 
-import React, { Component } from 'react';
-import Wrangler from 'components/Wrangler';
+const WRANGLER = 'components/Wrangler';
 
-export default class Experimental extends Component {
+import React, { Component } from 'react';
+import WranglerTopPanel from `${WRANGLER}/TopPanel`;
+import WranglerTable from `${WRANGLER}/WranglerTable`;
+import WranglerSidePanel from `${WRANGLER}/WranglerSidePanel`;
+import WranglerCLI from `${WRANGLER}/WranglerCLI`;
+
+export default class Wrangler extends Component {
   constructor(props) {
     super(props);
 
@@ -25,7 +30,18 @@ export default class Experimental extends Component {
 
   render() {
     return (
-      <Wrangler />
+      <div className="wrangler-container">
+        <WranglerTopPanel />
+
+        <div className="row">
+          <WranglerTable />
+
+          <WranglerSidePanel />
+        </div>
+
+        <WranglerCLI />
+
+      </div>
     );
   }
 }

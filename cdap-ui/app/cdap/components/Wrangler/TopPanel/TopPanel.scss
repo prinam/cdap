@@ -14,18 +14,10 @@
  * the License.
  */
 
-import React, { Component } from 'react';
-import Wrangler from 'components/Wrangler';
+.wrangler-container {
+  .top-panel {
+    height: 50px;
+    border-bottom: 1px solid #cccccc;
 
-export default class Experimental extends Component {
-  constructor(props) {
-    super(props);
-
-  }
-
-  render() {
-    return (
-      <Wrangler />
-    );
   }
 }
