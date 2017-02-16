@@ -33,7 +33,8 @@ export default class StreamCreateWithUploadWizard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      showWizard: this.props.isOpen
+      showWizard: this.props.isOpen,
+      successInfo: {}
     };
     this.eventEmitter = ee(ee);
   }

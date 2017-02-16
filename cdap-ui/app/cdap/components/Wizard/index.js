@@ -21,6 +21,7 @@ import T from 'i18n-react';
 
 require('./Wizard.scss');
 import shortid from 'shortid';
+import isEmpty from 'lodash/isEmpty';
 import WizardStepHeader from './WizardStepHeader';
 import WizardStepContent from './WizardStepContent';
 import CardActionFeedback from 'components/CardActionFeedback';
@@ -107,7 +108,7 @@ export default class Wizard extends Component {
             error: false,
             loading: false
           });
-          if (this.props.successInfo) {
+          if (this.props.successInfo && !isEmpty(this.props.successInfo)) {
             this.setState({callToActionInfo: this.props.successInfo});
           } else {
             this.props.onClose(true);

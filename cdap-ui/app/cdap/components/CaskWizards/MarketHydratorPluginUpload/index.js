@@ -32,7 +32,8 @@ export default class MarketHydratorPluginUpload extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      showWizard: this.props.isOpen
+      showWizard: this.props.isOpen,
+      successInfo: {}
     };
   }
 
@@ -67,9 +68,7 @@ export default class MarketHydratorPluginUpload extends Component {
   }
 
   onSubmit() {
-    if (this.props.isLastStepInMarket) {
-      this.buildSuccessInfo();
-    }
+    this.buildSuccessInfo();
     return ArtifactUploadActionCreator
       .uploadArtifact()
       .flatMap(() => ArtifactUploadActionCreator.uploadConfigurationJson());
@@ -137,5 +136,4 @@ MarketHydratorPluginUpload.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  isLastStepInMarket: PropTypes.bool
 };

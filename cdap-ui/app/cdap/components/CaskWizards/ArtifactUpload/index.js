@@ -30,7 +30,8 @@ export default class ArtifactUploadWizard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      showWizard: this.props.isOpen
+      showWizard: this.props.isOpen,
+      successInfo: {}
     };
   }
   componentWillUnmount() {
@@ -40,7 +41,7 @@ export default class ArtifactUploadWizard extends Component {
   }
 
   onSubmit() {
-    if (!this.props.isMarket || this.props.isLastStepInMarket) {
+    if (!this.props.isMarket || this.props.input.isLastStepInMarket) {
       this.buildSuccessInfo();
     }
     return ArtifactUploadActionCreator.uploadArtifact();
@@ -120,6 +121,5 @@ ArtifactUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  isMarket: PropTypes.bool,
-  isLastStepInMarket: PropTypes.bool
+  isMarket: PropTypes.bool
 };

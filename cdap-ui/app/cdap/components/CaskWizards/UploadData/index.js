@@ -30,7 +30,8 @@ export default class UploadDataWizard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      showWizard: this.props.isOpen
+      showWizard: this.props.isOpen,
+      successInfo: {}
     };
     this.setDefaultConfig();
     this.prepareInputForSteps();
@@ -49,7 +50,7 @@ export default class UploadDataWizard extends Component {
     let fileContents = state.viewdata.data;
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let authToken = cookie.load('CDAP_Auth_Token');
-    if (!this.props.usedInMarket) {
+    if (!this.props.isUsecase) {
       this.buildSuccessInfo(packagename, streamId, currentNamespace);
     }
 
@@ -147,5 +148,5 @@ UploadDataWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  usedInMarket: PropTypes.bool
+  isUsecase: PropTypes.bool
 };

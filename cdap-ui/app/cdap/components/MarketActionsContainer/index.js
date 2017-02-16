@@ -61,6 +61,11 @@ export default class MarketActionsContainer extends Component {
   }
 
   openWizard(actionIndex, actionType, action) {
+    // have to do this because the type returned from the backend is the same,
+    // whether this action is in an usecase or in the 'Datapacks' tab
+    if (actionType = 'load_datapack') {
+      actionType += '_usecase';
+    }
     this.setState({
       wizard: {
         actionIndex,
@@ -116,9 +121,11 @@ export default class MarketActionsContainer extends Component {
           isOpen={this.state.wizard.actionIndex !== null && this.state.wizard.actionType !== null}
           onClose={this.closeWizard.bind(this)}
           wizardType={this.state.wizard.actionType}
-          input={{action: this.state.wizard.action, package: this.context.entity}}
-          usedInMarket={true}
-          isLastStepInMarket={this.state.wizard.actionIndex === this.props.actions.length - 1}
+          input={{
+            action: this.state.wizard.action,
+            package: this.context.entity,
+            isLastStepInMarket: this.state.wizard.actionIndex === this.props.actions.length - 1
+          }}
         />
       </div>
     );

@@ -30,7 +30,8 @@ export default class PluginArtifactUploadWizard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      showWizard: this.props.isOpen
+      showWizard: this.props.isOpen,
+      successInfo: {}
     };
   }
   componentWillUnmount() {
@@ -39,9 +40,7 @@ export default class PluginArtifactUploadWizard extends Component {
     });
   }
   onSubmit() {
-    if (!this.props.usedInMarket) {
-      this.buildSuccessInfo();
-    }
+    this.buildSuccessInfo();
     return ArtifactUploadActionCreator
       .uploadArtifact()
       .flatMap(() => ArtifactUploadActionCreator.uploadConfigurationJson());
@@ -110,5 +109,4 @@ PluginArtifactUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  usedInMarket: PropTypes.bool
 };

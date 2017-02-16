@@ -34,7 +34,8 @@ export default class PublishPipelineWizard extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      showWizard: this.props.isOpen
+      showWizard: this.props.isOpen,
+      successInfo: {}
     };
 
     this.setDefaultConfig();
@@ -76,12 +77,12 @@ export default class PublishPipelineWizard extends Component {
   }
   buildSuccessInfo(name, namespace, draftId) {
     let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
-    let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.view');
-    let buttonUrl = `/pipelines/ns/${namespace}/view/${name}`;
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
-    if (this.props.input.action.type === 'create_pipeline_draft') {
-      buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.customize');
-      buttonUrl = `/pipelines/ns/${namespace}/studio?draftId=${draftId}`;
+    let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.customize');
+    let buttonUrl = `/pipelines/ns/${namespace}/studio?draftId=${draftId}`;
+    if (this.props.isUsecase) {
+      buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.view');
+      buttonUrl = `/pipelines/ns/${namespace}/view/${name}`;
     }
     this.setState({
       successInfo: {
@@ -113,7 +114,24 @@ export default class PublishPipelineWizard extends Component {
     };
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let draftId;
-    if (this.props.input.action.type === 'create_pipeline_draft') {
+    if (this.props.isUsecase) {
+      return MyPipelineApi
+        .publish({
+          namespace: currentNamespace,
+          appId: name
+          }, {
+            artifact,
+            config: pipelineConfig
+          }
+        )
+        .map((res) => {
+          if (this.props.input && this.props.input.isLastStepInMarket) {
+            this.buildSuccessInfo(name, currentNamespace);
+          }
+          this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
+          return res;
+        });
+    } else {
       return MyUserStoreApi
         .get()
         .flatMap((res) => {
@@ -132,27 +150,11 @@ export default class PublishPipelineWizard extends Component {
           return res;
         });
     }
-    if (this.props.input.action.type === 'create_pipeline') {
-      return MyPipelineApi
-        .publish({
-          namespace: currentNamespace,
-          appId: name
-          }, {
-            artifact,
-            config: pipelineConfig
-          }
-        )
-        .map((res) => {
-          if (!this.props.usedInMarket || this.props.isLastStepInMarket) {
-            this.buildSuccessInfo(name, currentNamespace);
-          }
-          this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
-          return res;
-        });
-    }
+
   }
   render() {
     let input = this.props.input || {};
+    console.log(input);
     let pkg = input.package || {};
     let wizardModalTitle = (pkg.label ? pkg.label + " | " : '') + T.translate('features.Wizard.PublishPipeline.headerlabel');
     return (
@@ -186,6 +188,5 @@ PublishPipelineWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  usedInMarket: PropTypes.bool,
-  isLastStepInMarket: PropTypes.bool
+  isUsecase: PropTypes.bool
 };

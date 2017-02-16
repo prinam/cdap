@@ -31,7 +31,8 @@ export default class ApplicationUploadWizard extends Component {
     super(props);
     this.eventEmitter = ee(ee);
     this.state = {
-      showWizard: props.isOpen || false
+      showWizard: props.isOpen || false,
+      successInfo: {}
     };
   }
   componentWillUnmount() {
@@ -41,9 +42,7 @@ export default class ApplicationUploadWizard extends Component {
   }
   onSubmit() {
     return UploadApplication().map((res) => {
-      if (!this.props.usedInMarket || this.props.isLastStepInMarket) {
-        this.buildSuccessInfo(res);
-      }
+      this.buildSuccessInfo(res);
       this.eventEmitter.emit(globalEvents.APPUPLOAD);
       return res;
     });
@@ -100,6 +99,4 @@ ApplicationUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   onClose: PropTypes.func,
   input: PropTypes.any,
-  usedInMarket: PropTypes.bool,
-  isLastStepInMarket: PropTypes.bool
 };
