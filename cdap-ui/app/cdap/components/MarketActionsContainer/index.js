@@ -63,7 +63,7 @@ export default class MarketActionsContainer extends Component {
   openWizard(actionIndex, actionType, action) {
     // have to do this because the type returned from the backend is the same,
     // whether this action is in an usecase or in the 'Datapacks' tab
-    if (actionType = 'load_datapack') {
+    if (actionType === 'load_datapack') {
       actionType += '_usecase';
     }
     this.setState({
