@@ -98,5 +98,5 @@ export default class ApplicationUploadWizard extends Component {
 ApplicationUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   onClose: PropTypes.func,
-  input: PropTypes.any,
+  input: PropTypes.any
 };

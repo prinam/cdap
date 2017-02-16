@@ -121,7 +121,7 @@ export default function AbstractWizard({isOpen, onClose, wizardType, input, back
       onClose,
       store,
       input,
-      backdrop,
+      backdrop
     })
   );
 }
@@ -130,5 +130,5 @@ AbstractWizard.propTypes = {
   wizardType: PropTypes.string,
   onClose: PropTypes.func,
   input: PropTypes.any,
-  backdrop: PropTypes.bool,
+  backdrop: PropTypes.bool
 };

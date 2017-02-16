@@ -154,7 +154,6 @@ export default class PublishPipelineWizard extends Component {
   }
   render() {
     let input = this.props.input || {};
-    console.log(input);
     let pkg = input.package || {};
     let wizardModalTitle = (pkg.label ? pkg.label + " | " : '') + T.translate('features.Wizard.PublishPipeline.headerlabel');
     return (

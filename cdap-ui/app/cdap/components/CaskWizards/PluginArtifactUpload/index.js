@@ -108,5 +108,5 @@ PluginArtifactUploadWizard.defaultProps = {
 PluginArtifactUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
-  onClose: PropTypes.func,
+  onClose: PropTypes.func
 };

@@ -148,5 +148,5 @@ StreamCreateWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  withUploadStep: PropTypes.bool,
+  withUploadStep: PropTypes.bool
 };
