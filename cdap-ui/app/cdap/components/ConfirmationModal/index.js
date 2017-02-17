@@ -25,6 +25,9 @@ require('./ConfirmationModal.scss');
 export default class ConfirmationModal extends Component {
   constructor(props) {
     super(props);
+    this.state = {
+      headerTitle: this.props.headerTitle
+    };
   }
 
   componentWillMount() {
@@ -41,7 +44,7 @@ export default class ConfirmationModal extends Component {
         <ModalBody className="loading">
           <h3 className="text-xs-center">
             <span className="fa fa-spinner fa-spin"></span>
-         </h3>
+          </h3>
         </ModalBody>
       );
     }
@@ -109,7 +112,7 @@ export default class ConfirmationModal extends Component {
         backdrop='static'
       >
         <ModalHeader>
-          {this.props.headerTitle}
+          {this.state.headerTitle}
         </ModalHeader>
 
         {this.renderModalBody()}
