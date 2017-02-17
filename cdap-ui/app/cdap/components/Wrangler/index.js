@@ -14,18 +14,42 @@
  * the License.
  */
 
-const WRANGLER = 'components/Wrangler';
-
 import React, { Component } from 'react';
-import WranglerTopPanel from `${WRANGLER}/TopPanel`;
-import WranglerTable from `${WRANGLER}/WranglerTable`;
-import WranglerSidePanel from `${WRANGLER}/WranglerSidePanel`;
-import WranglerCLI from `${WRANGLER}/WranglerCLI`;
+import WranglerTopPanel from 'components/Wrangler/TopPanel';
+import WranglerTable from 'components/Wrangler/WranglerTable';
+import WranglerSidePanel from 'components/Wrangler/WranglerSidePanel';
+import WranglerCLI from 'components/Wrangler/WranglerCLI';
+import MyWranglerApi from 'api/wrangler';
+
+import WranglerStore from 'components/Wrangler/store';
+import WranglerActions from 'components/Wrangler/store/WranglerActions';
+
+require('./Wrangler.scss');
 
 export default class Wrangler extends Component {
   constructor(props) {
     super(props);
+  }
 
+  componentWillMount() {
+    let params = {
+      namespace: 'default',
+      workspaceId: 'test',
+      limit: 100
+    };
+
+    MyWranglerApi.execute(params)
+      .subscribe((res) => {
+        WranglerStore.dispatch({
+          type: WranglerActions.setData,
+          payload: {
+            data: res.value,
+            headers: res.header
+          }
+        });
+      }, (err) => {
+        console.log('Init Error', err);
+      });
   }
 
   render() {
@@ -33,7 +57,7 @@ export default class Wrangler extends Component {
       <div className="wrangler-container">
         <WranglerTopPanel />
 
-        <div className="row">
+        <div className="row wrangler-body">
           <WranglerTable />
 
           <WranglerSidePanel />

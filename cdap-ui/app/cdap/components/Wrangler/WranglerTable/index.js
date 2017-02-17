@@ -15,17 +15,60 @@
  */
 
 import React, { Component } from 'react';
+import WranglerStore from 'components/Wrangler/store';
+import shortid from 'shortid';
+
+require('./WranglerTable.scss');
 
 export default class WranglerTable extends Component {
   constructor(props) {
     super(props);
 
+    let storeState = WranglerStore.getState().wrangler;
+
+    this.state = {
+      headers: storeState.data,
+      data: storeState.headers
+    };
+
+    WranglerStore.subscribe(() => {
+      let state = WranglerStore.getState().wrangler;
+
+      this.setState({
+        data: state.data,
+        headers: state.headers
+      });
+    });
   }
 
   render() {
+    let headers = this.state.headers;
+    let data = this.state.data;
+
     return (
-      <div className="col-xs-9 wrangler-data">
-        <h4>data table</h4>
+      <div className="col-xs-9 wrangler-table">
+        <table className="table table-bordered table-striped">
+          <thead className="thead-inverse">
+            {
+              headers.map((head) => {
+                return <th key={head}>{head}</th>;
+              })
+            }
+          </thead>
+          <tbody>
+            {
+              data.map((row) => {
+                return (
+                  <tr key={shortid.generate()}>
+                    {headers.map((head) => {
+                      return <td key={shortid.generate()}><div>{row[head]}</div></td>;
+                    })}
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
       </div>
     );
   }

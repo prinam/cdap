@@ -31,6 +31,7 @@ import Footer from 'components/Footer';
 import SplashScreen from 'components/SplashScreen';
 import ConnectionExample from 'components/ConnectionExample';
 import Experimental from 'components/Experimental';
+import Experimental2 from 'components/Experimental/index2';
 import cookie from 'react-cookie';
 import Router from 'react-router/BrowserRouter';
 import T from 'i18n-react';
@@ -105,6 +106,7 @@ class CDAP extends Component {
             <Match pattern="/ns/:namespace" history={history} component={Home} />
             <Match exactly pattern="/ns/:namespace/dashboard" component={Dashboard} />
             <Match pattern="/Experimental" component={Experimental} />
+            <Match pattern="/experimental2" component={Experimental2} />
             <Match pattern="/socket-example" component={ConnectionExample} />
             <Match pattern="/schemaeditor" component={SchemaEditor} />
             <Miss component={Page404} />

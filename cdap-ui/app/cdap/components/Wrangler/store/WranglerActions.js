@@ -14,3 +14,9 @@
  * the License.
  */
 
+const WranglerActions = {
+  setData: 'WRANGLER_SET_DATA',
+  setDirectives: 'WRANGLER_SET_DIRECTIVES'
+};
+
+export default WranglerActions;

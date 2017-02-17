@@ -13,3 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
+.wrangler-container {
+  .wrangler-body.row {
+    // height calculations
+    // 100vh - height of navbar - top panel - wrangler cli - footer
+    // 100vh - 50px - 50px - 50px - 54px
+    margin-right: 0;
+    margin-left: 0;
+    height: calc(100vh - 204px);
+  }
+}

@@ -25,7 +25,7 @@ import { Modal, ModalHeader, ModalBody } from 'reactstrap';
 
 require('./Experimental.scss');
 
-export default class Experimental extends Component {
+export default class Experimental2 extends Component {
   constructor(props) {
     super(props);
 

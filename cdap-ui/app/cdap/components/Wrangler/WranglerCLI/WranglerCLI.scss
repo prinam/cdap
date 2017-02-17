@@ -14,26 +14,37 @@
  * the License.
  */
 
-import React, { Component } from 'react';
-require('./TopPanel.scss');
+.wrangler-container {
+  .wrangler-cli {
+    position: fixed;
+    bottom: 54px;
+    height: 50px;
+    width: 100%;
+    border-top: 1px solid #cccccc;
 
-export default class WranglerTopPanel extends Component {
-  constructor(props) {
-    super(props);
-  }
+    .power-mode {
+      background-color: #999999;
+      color: white;
+      padding: 0 10px;
 
-  render() {
-    return (
-      <div className="top-panel clearfix">
-        <span>
-          <strong>Columns: 10000</strong>
-        </span>
+      &.error {
+        background-color: #c0392b;
+      }
+    }
 
-        <span>
-          <strong>Rows: 1000000</strong>
-        </span>
+    .input-container {
+      strong {
+        margin: 0 10px;
+        user-select: none;
+      }
+      .directive-input {
+        width: calc(100% - 110px);
+        display: inline-block;
 
-      </div>
-    );
+        .form-control {
+          border: 0;
+        }
+      }
+    }
   }
 }

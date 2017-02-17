@@ -15,22 +15,93 @@
  */
 
 import React, { Component } from 'react';
+import WranglerStore from 'components/Wrangler/store';
+import WranglerActions from 'components/Wrangler/store/WranglerActions';
+import MyWranglerApi from 'api/wrangler';
+import classnames from 'classnames';
+require('./WranglerCLI.scss');
 
 export default class WranglerCLI extends Component {
   constructor(props) {
     super(props);
 
+    this.state = {
+      directiveInput: '',
+      error: null
+    };
+
+    this.handleDirectiveChange = this.handleDirectiveChange.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+  }
+
+  handleDirectiveChange(e) {
+    this.setState({directiveInput: e.target.value});
+  }
+
+  handleKeyDown(e) {
+    if (e.keyCode !== 13) { return; }
+
+    this.execute();
+  }
+
+
+  execute() {
+    if (this.state.directiveInput.length === 0) { return; }
+
+    let store = WranglerStore.getState().wrangler;
+    let updatedDirectives = store.directives.concat([this.state.directiveInput]);
+
+    let params = {
+      namespace: 'default',
+      workspaceId: 'test',
+      limit: 100,
+      directive: updatedDirectives
+    };
+
+    MyWranglerApi.execute(params)
+      .subscribe((res) => {
+        this.setState({
+          error: null,
+          directiveInput: ''
+        });
+
+        WranglerStore.dispatch({
+          type: WranglerActions.setDirectives,
+          payload: {
+            data: res.value,
+            headers: res.header,
+            directives: updatedDirectives
+          }
+        });
+      }, (err) => {
+        this.setState({
+          error: err.message || err.response.message
+        });
+      });
+
   }
 
   render() {
     return (
-      <div className="command-line">
-        <div className="power-mode">
-          Power Mode
+      <div className="wrangler-cli">
+        <div
+          className={classnames('power-mode', { 'error': this.state.error })}
+        >
+          {!this.state.error ? 'Power Mode' : this.state.error}
         </div>
 
         <div className="input-container">
-          <input type="text" className="form-control"/>
+          <strong>Directive: /&gt;</strong>
+          <div className="directive-input">
+            <input
+              type="text"
+              className="form-control"
+              value={this.state.directiveInput}
+              onChange={this.handleDirectiveChange}
+              onKeyDown={this.handleKeyDown}
+            />
+          </div>
+
         </div>
       </div>
     );
