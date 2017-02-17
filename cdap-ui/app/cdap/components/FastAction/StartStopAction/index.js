@@ -62,17 +62,9 @@ export default class StartStopAction extends Component {
   componentWillMount() {
     this.statusPoll$ = MyProgramApi.pollStatus(this.params)
       .subscribe((res) => {
-        // If the fast action has stopped loading and the modal is open, and we do not have an error message, close the modal
-        if (this.state.status === 'loading' && this.state.status !== res.status && this.state.modal && !this.state.errorMessage) {
-          this.setState({
-            status: res.status,
-            modal: false
-          });
-        } else {
-          this.setState({
-            status: res.status
-          });
-        }
+        this.setState({
+          status: res.status
+        });
       });
   }
 
@@ -90,17 +82,17 @@ export default class StartStopAction extends Component {
 
     this.setState({
       status: 'loading',
-      startStop: params.action,
-      modal: false
+      startStop: params.action
     });
 
     MyProgramApi.action(params)
       .subscribe((res) => {
-        this.props.onSuccess(res);
         this.setState({
           errorMessage : '',
           extendedMessage : '',
+          modal: false
         });
+        this.props.onSuccess(res);
       }, (err) => {
         this.setState({
           errorMessage : `Program ${this.props.entity.id} failed to ${params.action}`,
@@ -143,6 +135,7 @@ export default class StartStopAction extends Component {
               confirmButtonText={T.translate('features.FastAction.' + confirmBtnText)}
               confirmFn={this.doStartStop}
               cancelFn={this.toggleModal}
+              isLoading={this.state.status === 'loading'}
               isOpen={this.state.modal}
               errorMessage={this.state.errorMessage}
               disableAction={!!this.state.errorMessage}

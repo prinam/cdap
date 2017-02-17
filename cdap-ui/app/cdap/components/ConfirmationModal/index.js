@@ -36,6 +36,15 @@ export default class ConfirmationModal extends Component {
   }
 
   renderModalBody() {
+    if (this.props.isLoading) {
+      return (
+        <ModalBody className="loading">
+          <h3 className="text-xs-center">
+            <span className="fa fa-spinner fa-spin"></span>
+         </h3>
+        </ModalBody>
+      );
+    }
     let confirmation = this.props.confirmationElem ? this.props.confirmationElem : this.props.confirmationText;
 
     let actionBtn;
@@ -131,6 +140,7 @@ ConfirmationModal.propTypes = {
   headerTitle: PropTypes.string,
   isOpen: PropTypes.bool,
   toggleModal: PropTypes.func,
+  isLoading: PropTypes.bool,
   errorMessage: PropTypes.string,
   extendedMessage: PropTypes.string,
   disableAction: PropTypes.bool
