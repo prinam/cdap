@@ -90,7 +90,8 @@ export default class StartStopAction extends Component {
 
     this.setState({
       status: 'loading',
-      startStop: params.action
+      startStop: params.action,
+      modal: false
     });
 
     MyProgramApi.action(params)
@@ -98,7 +99,7 @@ export default class StartStopAction extends Component {
         this.props.onSuccess(res);
         this.setState({
           errorMessage : '',
-          extendedMessage : ''
+          extendedMessage : '',
         });
       }, (err) => {
         this.setState({
@@ -142,7 +143,6 @@ export default class StartStopAction extends Component {
               confirmButtonText={T.translate('features.FastAction.' + confirmBtnText)}
               confirmFn={this.doStartStop}
               cancelFn={this.toggleModal}
-              isLoading={this.state.status === 'loading'}
               isOpen={this.state.modal}
               errorMessage={this.state.errorMessage}
               disableAction={!!this.state.errorMessage}
