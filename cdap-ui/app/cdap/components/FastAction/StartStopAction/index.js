@@ -44,7 +44,6 @@ export default class StartStopAction extends Component {
 
     this.startStop;
     this.toggleTooltip = this.toggleTooltip.bind(this);
-    this.onClick = this.onClick.bind(this);
     this.doStartStop = this.doStartStop.bind(this);
     this.toggleModal = this.toggleModal.bind(this);
   }
@@ -63,7 +62,6 @@ export default class StartStopAction extends Component {
   componentWillMount() {
     this.statusPoll$ = MyProgramApi.pollStatus(this.params)
       .subscribe((res) => {
-
         // If the fast action has stopped loading and the modal is open, and we do not have an error message, close the modal
         if (this.state.status === 'loading' && this.state.status !== res.status && this.state.modal && !this.state.errorMessage) {
           this.setState({
@@ -80,12 +78,6 @@ export default class StartStopAction extends Component {
 
   componentWillUnmount() {
     this.statusPoll$.dispose();
-  }
-
-  onClick(e) {
-    this.toggleModal();
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
   }
 
   doStartStop() {
@@ -168,7 +160,7 @@ export default class StartStopAction extends Component {
             <span>
               <FastActionButton
                 icon={icon}
-                action={this.onClick}
+                action={this.toggleModal}
                 id={tooltipID}
               />
               <Tooltip
