@@ -14,13 +14,18 @@
  * the License.
  */
 
-.wrangler-container {
-  .top-panel {
-    height: 50px;
-    border-bottom: 1px solid #cccccc;
+import React, { Component } from 'react';
 
-    .workspace-mgmt {
-      padding-left: 10px;
-    }
+
+export default class WorkspaceModal extends Component {
+  constructor(props) {
+    super(props);
+
+  }
+
+  render() {
+    return (
+      <h4>Modal</h4>
+    );
   }
 }

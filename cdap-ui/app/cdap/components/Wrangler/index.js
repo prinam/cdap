@@ -50,6 +50,13 @@ export default class Wrangler extends Component {
       }, (err) => {
         console.log('Init Error', err);
       });
+
+    MyWranglerApi.getUsage({
+      namespace: 'default'
+    })
+      .subscribe((res) => {
+        console.log('directives', res);
+      });
   }
 
   render() {

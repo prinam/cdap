@@ -15,24 +15,44 @@
  */
 
 import React, { Component } from 'react';
+import WorkspaceModal from 'components/Wrangler/TopPanel/WorkspaceModal';
 require('./TopPanel.scss');
 
 export default class WranglerTopPanel extends Component {
   constructor(props) {
     super(props);
+
+    this.state = {
+      workspaceId: 'test',
+      workspaceModal: false
+    };
+
+    this.toggleWorkspaceModal = this.toggleWorkspaceModal.bind(this);
+  }
+
+  toggleWorkspaceModal() {
+    // this.setState({workspaceModal: !this.state.workspaceModal});
+  }
+
+  renderWorkspaceModal() {
+    if (!this.state.workspaceModal) { return null; }
+
+    return <WorkspaceModal />;
   }
 
   render() {
     return (
       <div className="top-panel clearfix">
-        <span>
-          <strong>Columns: 10000</strong>
-        </span>
+        <div className="workspace-mgmt float-xs-left">
+          <strong>Workspace: </strong>
 
-        <span>
-          <strong>Rows: 1000000</strong>
-        </span>
-
+          <span
+            onClick={this.toggleWorkspaceModal}
+          >
+            {this.state.workspaceId}
+            {this.renderWorkspaceModal()}
+          </span>
+        </div>
       </div>
     );
   }
