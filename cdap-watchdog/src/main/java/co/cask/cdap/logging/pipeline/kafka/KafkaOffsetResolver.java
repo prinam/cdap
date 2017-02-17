@@ -151,13 +151,14 @@ class KafkaOffsetResolver {
         = getResponseMessageSet(consumer, partition, clientName, BUFFER_SIZE, searchOffset);
       for (MessageAndOffset messageAndOffset : messageSet) {
         try {
-          // TODO: [CDAP-8470] need a serializer for deserializing ILoggingEvent Kafka message to get time only
-          ILoggingEvent event = serializer.fromBytes(messageAndOffset.message().payload());
-          long time = event.getTimeStamp();
+          long time = serializer.decodeEventTimestamp(messageAndOffset.message().payload());
           if (time > maxTime) {
             LOG.debug("Failed to find the message with timestamp {} in topic {} partition {} after " +
-                        "exceeding the max time limit {} with time {}", targetTime, topic, partition, maxTime, time);
-            // Return the latest offset before minTime if no message with targetTime is found
+                        "exceeding the max time limit {} with time {}. Returning the next offset {} of the message " +
+                        "with largest offset and event time before minTime=(targetTime - PIPELINE_EVENT_DELAY_MS)={}." +
+                        " Or the starting offset {} if no message has event time before minTime.",
+                      targetTime, topic, partition, maxTime, time, minTime, startOffset);
+            // Return the next offset before minTime if no message with targetTime is found
             return nextOffsetBeforeMinTime;
           }
           if (time == targetTime) {
@@ -175,7 +176,11 @@ class KafkaOffsetResolver {
         }
       }
     }
-    LOG.debug("Failed to find message with timestamp {} after searching until offset {}.", targetTime, searchOffset);
+    LOG.debug("Failed to find message with event time equal to targetTime={} after searching until offset {}. " +
+                "Returning the next offset {} of the message with largest offset and event time before" +
+                " minTime=(targetTime - PIPELINE_EVENT_DELAY_MS)={}. Or the starting offset {} if no message has" +
+                "event time before minTime.",
+              targetTime, searchOffset, nextOffsetBeforeMinTime, minTime, startOffset);
     // Return nextOffsetBeforeMinTime if no message with targetTime is found or maxTime is not reached
     return nextOffsetBeforeMinTime;
   }
@@ -191,9 +196,7 @@ class KafkaOffsetResolver {
     for (MessageAndOffset messageAndOffset : messageSet) {
       long offset = messageAndOffset.offset();
       try {
-        // TODO: [CDAP-8470] need a serializer for deserializing ILoggingEvent Kafka message to get time only
-        ILoggingEvent event = serializer.fromBytes(messageAndOffset.message().payload());
-        return event.getTimeStamp();
+        return serializer.decodeEventTimestamp(messageAndOffset.message().payload());
       } catch (IOException e) {
         LOG.warn("Message with offset {} in topic {} partition {} is ignored because of failure to decode.",
                  offset, topic, partition, e);
