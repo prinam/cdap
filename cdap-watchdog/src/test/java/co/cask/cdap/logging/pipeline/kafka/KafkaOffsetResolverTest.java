@@ -48,10 +48,13 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +62,11 @@ import java.util.concurrent.TimeUnit;
  * Unit-test for {@link KafkaOffsetResolver}.
  */
 public class KafkaOffsetResolverTest {
+
+  private static final long EVENT_DELAY_MILLIS = 60000L;
+  private static final Random RANDOM = new Random();
+
+
   @ClassRule
   public static final TemporaryFolder TEMP_FOLDER = new TemporaryFolder();
 
@@ -83,40 +91,82 @@ public class KafkaOffsetResolverTest {
                     1);
 
   @Test
-  public void testFindOffset() throws Exception {
-    String topic = "testOffsetResolver";
-    long replicationDelayMillis = 120000L;
-    long eventOutOfOrderMillis = 60000L;
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L,
-                                                         replicationDelayMillis, eventOutOfOrderMillis,
+  public void testOutOfOrderEvents() throws Exception {
+    String topic = "testOutOfOrderEvents";
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, EVENT_DELAY_MILLIS,
                                                          1048576, 200L);
     KAFKA_TESTER.createTopic(topic, 1);
 
-    // Publish some log messages to Kafka
-    long baseTime = System.currentTimeMillis() - replicationDelayMillis;
-    List<ILoggingEvent> events = ImmutableList.of(
-      createLoggingEvent("test.logger", Level.INFO, "0", baseTime - 20 * 1000 - eventOutOfOrderMillis),
-      createLoggingEvent("test.logger", Level.INFO, "0", baseTime - 20 * 1000 - eventOutOfOrderMillis),
-      createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 7 * 1000 - eventOutOfOrderMillis),
+    // Publish log messages to Kafka and wait for all messages to be published
+    long baseTime = System.currentTimeMillis() - EVENT_DELAY_MILLIS;
+    List<ILoggingEvent> outOfOrderEvents = ImmutableList.of(
+      createLoggingEvent("test.logger", Level.INFO, "0", baseTime - 20 * 1000 - EVENT_DELAY_MILLIS),
+      createLoggingEvent("test.logger", Level.INFO, "0", baseTime - 20 * 1000 - EVENT_DELAY_MILLIS),
+      createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 7 * 1000 - EVENT_DELAY_MILLIS),
       createLoggingEvent("test.logger", Level.INFO, "2", baseTime - 9 * 100),
       createLoggingEvent("test.logger", Level.INFO, "3", baseTime - 500),
       createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 9 * 1000),
-      createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 9 * 1000 + eventOutOfOrderMillis / 2),
+      createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 9 * 1000 + EVENT_DELAY_MILLIS / 2),
       createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 9 * 1000),
-      createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 9 * 1000 - eventOutOfOrderMillis / 2),
+      createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 9 * 1000 - EVENT_DELAY_MILLIS / 2),
       createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 10 * 1000),
       createLoggingEvent("test.logger", Level.INFO, "1", baseTime - 600),
       createLoggingEvent("test.logger", Level.INFO, "5", baseTime - 20 * 1000),
-      createLoggingEvent("test.logger", Level.INFO, "5", baseTime - 20 * 1000 + eventOutOfOrderMillis / 2),
+      createLoggingEvent("test.logger", Level.INFO, "5", baseTime - 20 * 1000 + EVENT_DELAY_MILLIS / 2),
       createLoggingEvent("test.logger", Level.INFO, "6", baseTime - 600),
       createLoggingEvent("test.logger", Level.INFO, "6", baseTime - 10 * 1000),
-      createLoggingEvent("test.logger", Level.INFO, "7", baseTime - 16 * 1000 + eventOutOfOrderMillis),
-      createLoggingEvent("test.logger", Level.INFO, "8", baseTime - 7 * 1000 + eventOutOfOrderMillis),
-      createLoggingEvent("test.logger", Level.INFO, "4", baseTime - 100 + eventOutOfOrderMillis));
-    publishLog(topic, events);
-    KafkaOffsetResolver offsetResolver = new KafkaOffsetResolver(KAFKA_TESTER.getBrokerService(), config);
+      createLoggingEvent("test.logger", Level.INFO, "7", baseTime + EVENT_DELAY_MILLIS),
+      createLoggingEvent("test.logger", Level.INFO, "8", baseTime - 7 * 1000 + EVENT_DELAY_MILLIS),
+      createLoggingEvent("test.logger", Level.INFO, "4", baseTime - 100 + EVENT_DELAY_MILLIS));
+    publishLog(topic, outOfOrderEvents);
+    waitForAllLogsPublished(topic, outOfOrderEvents.size());
 
-    final CountDownLatch latch = new CountDownLatch(events.size());
+    KafkaOffsetResolver offsetResolver = new KafkaOffsetResolver(KAFKA_TESTER.getBrokerService(), config);
+    // Use every event's timestamp as target time and assert that found offset with target timestamp
+    // matches the expected offset
+    for (ILoggingEvent event : outOfOrderEvents) {
+      assertOffsetResolverResult(offsetResolver, outOfOrderEvents, event.getTimeStamp());
+    }
+    // Use a random number between (timestamp - EVENT_DELAY_MILLIS, timestamp + EVENT_DELAY_MILLIS) as target time
+    // and assert that found offset with target timestamp matches the expected offset
+    for (ILoggingEvent event : outOfOrderEvents) {
+      assertOffsetResolverResult(offsetResolver, outOfOrderEvents,
+                                 event.getTimeStamp() + RANDOM.nextInt() % EVENT_DELAY_MILLIS);
+    }
+    // If the target time is later than all existing messages by at least EVENT_DELAY_MILLIS,
+    // the next offset of the latest message will be returned
+    Assert.assertEquals(outOfOrderEvents.size(), offsetResolver.getMatchingOffset(new Checkpoint(Long.MAX_VALUE,
+                                                                                       Long.MAX_VALUE, 0), 0));
+  }
+
+  @Test
+  public void testInOrderEvents() throws InterruptedException, IOException {
+    String topic = "testInOrderEvents";
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, EVENT_DELAY_MILLIS,
+                                                         1048576, 200L);
+    KAFKA_TESTER.createTopic(topic, 1);
+
+    // Publish log messages to Kafka and wait for all messages to be published
+    long baseTime = System.currentTimeMillis() - EVENT_DELAY_MILLIS;
+    List<ILoggingEvent> inOrderEvents = new ArrayList<>();
+    for (int i = 0; i < 20; i++) {
+      inOrderEvents.add(createLoggingEvent("test.logger", Level.INFO, Integer.toString(i), baseTime + i));
+    }
+    publishLog(topic, inOrderEvents);
+    waitForAllLogsPublished(topic, inOrderEvents.size());
+
+    KafkaOffsetResolver offsetResolver = new KafkaOffsetResolver(KAFKA_TESTER.getBrokerService(), config);
+    // Use every event's timestamp as target time and assert that found offset is the next offset of the current offset
+    for (int i = 0; i < inOrderEvents.size(); i++) {
+      long targetTime = inOrderEvents.get(i).getTimeStamp();
+      long offset = offsetResolver.getMatchingOffset(new Checkpoint(Long.MAX_VALUE, targetTime, 0), 0);
+      Assert.assertEquals("Failed to find the expected event with the target time: " + targetTime,
+                          i + 1, offset);
+    }
+  }
+
+  private void waitForAllLogsPublished(String topic, int logsNum) throws InterruptedException {
+    final CountDownLatch latch = new CountDownLatch(logsNum);
     final CountDownLatch stopLatch = new CountDownLatch(1);
     Cancellable cancel = KAFKA_TESTER.getKafkaClient().getConsumer().prepare().add(topic, 0, 0).consume(
       new KafkaConsumer.MessageCallback() {
@@ -141,35 +191,41 @@ public class KafkaOffsetResolverTest {
     Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
     cancel.cancel();
     Assert.assertTrue(stopLatch.await(1, TimeUnit.SECONDS));
+  }
 
-    // Use every event's timestamp as target time and assert that found offset with target timestamp
-    // matches the expected offset
-    for (int i = 0; i < events.size(); i++) {
-      long targetTime = events.get(i).getTimeStamp();
-      long offset = offsetResolver.getMatchingOffset(new Checkpoint(Long.MAX_VALUE, targetTime, 0), 0);
-      // Increment the offset returned by findSmallestOffsetByTime to get the next offset
-      long expectedOffset = findSmallestOffsetByTime(events, targetTime) + 1;
-      Assert.assertEquals(String.format("Failed to find the expected event %s with the target time from event %s",
-                                        events.get((int) expectedOffset - 1).toString(), events.get(i).toString()),
-                          expectedOffset, offset);
-    }
-    // Failed to find matching offset for timestamp returns -1
-    Assert.assertEquals(-1, offsetResolver.getMatchingOffset(new Checkpoint(Long.MAX_VALUE, Long.MAX_VALUE, 0), 0));
+  private void assertOffsetResolverResult(KafkaOffsetResolver offsetResolver, List<ILoggingEvent> events,
+                                          long targetTime) throws IOException {
+    long offset = offsetResolver.getMatchingOffset(new Checkpoint(Long.MAX_VALUE, targetTime, 0), 0);
+    long expectedOffset = findExpectedOffsetByTime(events, targetTime);
+    Assert.assertEquals("Failed to find the expected event with the target time: " + targetTime,
+                        expectedOffset, offset);
   }
 
   /**
-   * Finds the smallest offset with corresponding timestamp equal to targetTime.
+   * Finds the smallest offset with corresponding timestamp equal to targetTime,
+   * or the largest offset with corresponding timestamp smaller than (targetTime - EVENT_DELAY_MILLIS) if no event
+   * has timestamp equal to targetTime, or the smallest offset 0 if no event has timestamp smaller
+   * than (targetTime - EVENT_DELAY_MILLIS)
    */
-  private long findSmallestOffsetByTime(List<ILoggingEvent> events, long targetTime) {
+  private long findExpectedOffsetByTime(List<ILoggingEvent> events, long targetTime) {
     long offset = 0;
+    // Use smallest offset 0 as default value in case no event has timestamp smaller
+    long latestOffsetBeforeMinTime = 0;
+    long minTime = targetTime - EVENT_DELAY_MILLIS;
     for (ILoggingEvent event : events) {
-      if (event.getTimeStamp() == targetTime) {
-        return offset;
+      long time = event.getTimeStamp();
+      if (time == targetTime) {
+        // Increment the offset to get the next offset
+        return offset + 1;
+      }
+      if (time < minTime) {
+        // Increment the offset to get the next offset
+        latestOffsetBeforeMinTime = offset + 1;
       }
       offset++;
     }
-    // should never reach here
-    return -1;
+    // No event contains timestamp equal to targetTime, return latestOffsetBeforeMinTime
+    return latestOffsetBeforeMinTime;
   }
 
   /**
@@ -198,7 +254,7 @@ public class KafkaOffsetResolverTest {
 
     LoggingEventSerializer serializer = new LoggingEventSerializer();
     for (ILoggingEvent event : events) {
-      preparer.add(ByteBuffer.wrap(serializer.toBytes(event, context)), context.getLogPartition());
+      preparer.add(ByteBuffer.wrap(serializer.toBytes(event)), context.getLogPartition());
     }
     preparer.send();
   }

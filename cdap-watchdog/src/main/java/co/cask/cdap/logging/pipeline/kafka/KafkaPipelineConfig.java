@@ -29,20 +29,15 @@ public final class KafkaPipelineConfig {
   private final Set<Integer> partitions;
   private final long maxBufferSize;
   private final long eventDelayMillis;
-  private final long eventOutOfOrderMillis;
-  private final long replicationDelayMillis;
   private final int kafkaFetchBufferSize;
   private final long checkpointIntervalMillis;
 
   public KafkaPipelineConfig(String topic, Set<Integer> partitions, long maxBufferSize,
-                             long eventDelayMillis, long eventOutOfOrderMillis, long replicationDelayMillis,
-                             int kafkaFetchBufferSize, long checkpointIntervalMillis) {
+                             long eventDelayMillis, int kafkaFetchBufferSize, long checkpointIntervalMillis) {
     this.topic = topic;
     this.partitions = ImmutableSet.copyOf(partitions);
     this.maxBufferSize = maxBufferSize;
     this.eventDelayMillis = eventDelayMillis;
-    this.eventOutOfOrderMillis = eventOutOfOrderMillis;
-    this.replicationDelayMillis = replicationDelayMillis;
     this.kafkaFetchBufferSize = kafkaFetchBufferSize;
     this.checkpointIntervalMillis = checkpointIntervalMillis;
   }
@@ -63,14 +58,6 @@ public final class KafkaPipelineConfig {
     return eventDelayMillis;
   }
 
-  long getEventOutOfOrderMillis() {
-    return eventOutOfOrderMillis;
-  }
-
-  long getReplicationDelayMillis() {
-    return replicationDelayMillis;
-  }
-
   int getKafkaFetchBufferSize() {
     return kafkaFetchBufferSize;
   }
@@ -86,8 +73,6 @@ public final class KafkaPipelineConfig {
       ", partitions=" + partitions +
       ", maxBufferSize=" + maxBufferSize +
       ", eventDelayMillis=" + eventDelayMillis +
-      ", eventOutOfOrderMillis=" + eventOutOfOrderMillis +
-      ", replicationDelayMillis=" + replicationDelayMillis +
       ", kafkaFetchBufferSize=" + kafkaFetchBufferSize +
       ", checkpointIntervalMillis=" + checkpointIntervalMillis +
       '}';

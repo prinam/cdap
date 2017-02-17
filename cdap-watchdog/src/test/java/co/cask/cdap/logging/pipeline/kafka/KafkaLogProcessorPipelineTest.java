@@ -140,8 +140,7 @@ public class KafkaLogProcessorPipelineTest {
     final TestAppender appender = getAppender(loggerContext.getLogger(Logger.ROOT_LOGGER_NAME),
                                               "Test", TestAppender.class);
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 300L,
-                                                         60000L, 120000L, 1048576, 500L);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 300L, 1048576, 500L);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
@@ -277,8 +276,7 @@ public class KafkaLogProcessorPipelineTest {
 
     String topic = "metricsPipeline";
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L,
-                                                         60000L, 120000L, 1048576, 200L);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L, 1048576, 200L);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
@@ -404,8 +402,7 @@ public class KafkaLogProcessorPipelineTest {
 
     String topic = "testMultiAppenders";
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L,
-                                                         60000L, 120000L, 1048576, 200L);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024L, 100L, 1048576, 200L);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
