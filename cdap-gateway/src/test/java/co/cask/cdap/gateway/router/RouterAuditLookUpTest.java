@@ -37,8 +37,6 @@ public class RouterAuditLookUpTest {
   @Test
   public void testCorrectNumberInClassPath() throws Exception {
     Assert.assertEquals(ExceptedNumberOfAuditPolicyPaths.EXPECTED_PATH_NUMBER, AUDIT_LOOK_UP.getNumberOfPaths());
-    Assert.assertEquals(ExceptedNumberOfAuditPolicyPaths.EXPECTED_HANDLER_NUMBER,
-                        AUDIT_LOOK_UP.getNumberOfHandlerClasses());
   }
 
   @Test

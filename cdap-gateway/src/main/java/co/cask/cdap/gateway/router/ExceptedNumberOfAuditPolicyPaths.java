@@ -24,7 +24,4 @@ import com.google.common.annotations.VisibleForTesting;
  */
 public final class ExceptedNumberOfAuditPolicyPaths {
   public static final int EXPECTED_PATH_NUMBER = 86;
-
-  @VisibleForTesting
-  public static final int EXPECTED_HANDLER_NUMBER = 62;
 }
