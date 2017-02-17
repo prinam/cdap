@@ -45,6 +45,15 @@ export default class WranglerTable extends Component {
     let headers = this.state.headers;
     let data = this.state.data;
 
+    if (data.length === 0) {
+      return (
+        <div className="col-xs-9 wrangler-table empty">
+          <h4 className="text-xs-center">No Data</h4>
+          <h5 className="text-xs-center">Please create workspace and upload data</h5>
+        </div>
+      );
+    }
+
     return (
       <div className="col-xs-9 wrangler-table">
         <table className="table table-bordered table-striped">

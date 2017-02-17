@@ -21,6 +21,21 @@
 
     .workspace-mgmt {
       padding-left: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 50px;
+    }
+  }
+}
+
+.workspace-management-modal.modal-dialog {
+  .modal-body {
+    .button-container {
+      margin-top: 10px;
+
+      .btn:not(:first-child) {
+        margin-left: 5px;
+      }
     }
   }
 }

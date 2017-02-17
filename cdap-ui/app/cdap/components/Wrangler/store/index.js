@@ -23,6 +23,7 @@ const defaultAction = {
 };
 
 const defaultInitialState = {
+  workspaceId: '',
   data: [],
   headers: [],
   directives: []
@@ -43,6 +44,14 @@ const wrangler = (state = defaultInitialState, action = defaultAction) => {
         data: action.payload.data,
         headers: action.payload.headers,
         directives: action.payload.directives
+      });
+      break;
+    case WranglerActions.setWorkspace:
+      stateCopy = Object.assign({}, state, {
+        workspaceId: action.payload.workspaceId,
+        headers: action.payload.headers || [],
+        directives: [],
+        data: action.payload.data || []
       });
       break;
     default:

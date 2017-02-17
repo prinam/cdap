@@ -198,7 +198,7 @@ export default class Experimental2 extends Component {
     });
   }
 
-    getSummary() {
+  getSummary() {
     let workspaceId = this.workspaceId.value;
     if (!workspaceId) {
       this.setState({

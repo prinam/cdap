@@ -20,7 +20,7 @@ import WranglerTable from 'components/Wrangler/WranglerTable';
 import WranglerSidePanel from 'components/Wrangler/WranglerSidePanel';
 import WranglerCLI from 'components/Wrangler/WranglerCLI';
 import MyWranglerApi from 'api/wrangler';
-
+import cookie from 'react-cookie';
 import WranglerStore from 'components/Wrangler/store';
 import WranglerActions from 'components/Wrangler/store/WranglerActions';
 
@@ -32,24 +32,29 @@ export default class Wrangler extends Component {
   }
 
   componentWillMount() {
-    let params = {
-      namespace: 'default',
-      workspaceId: 'test',
-      limit: 100
-    };
+    let workspaceId = cookie.load('WRANGLER_WORKSPACE');
+    if (workspaceId) {
+      let params = {
+        namespace: 'default',
+        workspaceId: workspaceId,
+        limit: 100
+      };
 
-    MyWranglerApi.execute(params)
-      .subscribe((res) => {
-        WranglerStore.dispatch({
-          type: WranglerActions.setData,
-          payload: {
-            data: res.value,
-            headers: res.header
-          }
+      MyWranglerApi.execute(params)
+        .subscribe((res) => {
+          WranglerStore.dispatch({
+            type: WranglerActions.setWorkspace,
+            payload: {
+              data: res.value,
+              headers: res.header,
+              workspaceId
+            }
+          });
+        }, (err) => {
+          console.log('Init Error', err);
+          cookie.remove('WRANGLER_WORKSPACE');
         });
-      }, (err) => {
-        console.log('Init Error', err);
-      });
+    }
 
     MyWranglerApi.getUsage({
       namespace: 'default'
