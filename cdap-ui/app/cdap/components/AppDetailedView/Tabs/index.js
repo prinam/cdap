@@ -60,7 +60,7 @@ export default class AppDetailedViewTab extends Component {
               <Link
                 to={`/ns/${this.props.params.namespace}/apps/${this.props.params.appId}/datasets`}
                 activeClassName="active"
-              >Datasets ({this.state.entity.datasets.length})</Link>
+              >Datasets ({this.state.entity.datasets.length + this.state.entity.streams.length})</Link>
             </NavLink>
           </NavItem>
           <NavItem>
