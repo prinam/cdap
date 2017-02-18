@@ -14,11 +14,16 @@
  * the License.
  */
 import React, {PropTypes} from 'react';
+import NamespaceStore from 'services/NamespaceStore';
+import {Link} from 'react-router';
+import {convertEntityTypeToApi} from 'services/entity-type-api-converter';
 import classnames from 'classnames';
 import FastActions from 'components/EntityCard/FastActions';
-require('./DatasetStreamTable.scss');
 import T from 'i18n-react';
+require('./DatasetStreamTable.scss');
+
 export default function DatasetStreamTable({dataEntities}) {
+  let currentNamespace = NamespaceStore.getState().selectedNamespace;
   return (
     <div className="dataentity-table">
       <table className="table table-bordered table-sm">
@@ -38,24 +43,42 @@ export default function DatasetStreamTable({dataEntities}) {
             dataEntities.map(dataEntity => {
               let icon = dataEntity.type === 'datasetinstance' ? 'icon-datasets' : 'icon-streams';
               let type = dataEntity.type === 'datasetinstance' ? 'Dataset' : 'Stream';
+              let link = `/ns/${currentNamespace}/${convertEntityTypeToApi(dataEntity.type)}/${dataEntity.id}`;
               return (
+                // this is super ugly, but cannot wrap a link around a <tr> tag, so have to wrap it
+                // around every <td>. Javascript solutions won't show the link when the user hovers
+                // over the element.
                 <tr key={dataEntity.uniqueId}>
-                  <td>{dataEntity.name}</td>
                   <td>
-                    <i className={classnames('fa', icon)}></i>
-                    <span>{type}</span>
+                    <Link to={link}>{dataEntity.name}</Link>
                   </td>
-                  <td>{dataEntity.reads}</td>
-                  <td>{dataEntity.writes}</td>
-                  <td>{dataEntity.events}</td>
-                  <td>{dataEntity.bytes}</td>
                   <td>
-                    <div className="fast-actions-container">
-                      <FastActions
-                        className="text-xs-left"
-                        entity={dataEntity}
-                      />
-                    </div>
+                    <Link to={link}>
+                      <i className={classnames('fa', icon)}></i>
+                      <span>{type}</span>
+                    </Link>
+                  </td>
+                  <td>
+                    <Link to={link}>{dataEntity.reads}</Link>
+                  </td>
+                  <td>
+                    <Link to={link}>{dataEntity.writes}</Link>
+                  </td>
+                  <td>
+                    <Link to={link}>{dataEntity.events}</Link>
+                  </td>
+                  <td>
+                    <Link to={link}>{dataEntity.bytes}</Link>
+                  </td>
+                  <td>
+                    <Link to={link}>
+                      <div className="fast-actions-container">
+                        <FastActions
+                          className="text-xs-left"
+                          entity={dataEntity}
+                        />
+                      </div>
+                    </Link>
                   </td>
                 </tr>
               );

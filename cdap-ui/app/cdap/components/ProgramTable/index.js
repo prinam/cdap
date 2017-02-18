@@ -65,7 +65,7 @@ export default class ProgramTable extends Component {
     }
     // have to convert latestRun back from string to seconds from epoch
     if (sortByColumn === 'latestRun') {
-      entities = orderBy(entities, [function(entity) {return moment(entity.latestRun).valueOf()}], [sortOrder]);
+      entities = orderBy(entities, [function(entity) { return moment(entity.latestRun).valueOf(); }], [sortOrder]);
     } else {
       entities = orderBy(entities, [sortByColumn], [sortOrder]);
     }

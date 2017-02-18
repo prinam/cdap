@@ -30,5 +30,23 @@
     tr td {
       border-color: $custom_table-border-color;
     }
+
+    tbody {
+      tr {
+        &:hover {
+          background-color: white;
+          cursor: pointer;
+        }
+
+        a {
+          color: inherit;
+          display: block;
+
+          &:hover {
+            text-decoration: none;
+          }
+        }
+      }
+    }
   }
 }
