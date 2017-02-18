@@ -68,6 +68,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Unit test for {@link RollingLocationLogAppender}
@@ -211,6 +212,40 @@ public class RollingLocationLogAppenderTest {
     locationOutputStream = activeFiles.get(new LocationIdentifier("testNs1", "testApp1"));
     parentDir = Locations.getParent(locationOutputStream.getLocation());
     Assert.assertEquals(10, parentDir.list().size());
+  }
+
+  @Test
+  public void testFileClose() throws Exception {
+    // assume SLF4J is bound to logback in the current environment
+    AppenderContext appenderContext = new LocalAppenderContext(injector.getInstance(DatasetFramework.class),
+                                                               injector.getInstance(TransactionSystemClient.class),
+                                                               injector.getInstance(LocationFactory.class),
+                                                               new NoOpMetricsCollectionService());
+
+    JoranConfigurator configurator = new JoranConfigurator();
+    configurator.setContext(appenderContext);
+    // Call context.reset() to clear any previous configuration, e.g. default
+    // configuration. For multi-step configuration, omit calling context.reset().
+    appenderContext.reset();
+
+    configurator.doConfigure(getClass().getResourceAsStream("/rolling-appender-logback-test.xml"));
+    StatusPrinter.printInCaseOfErrorsOrWarnings(appenderContext);
+
+    RollingLocationLogAppender rollingAppender =
+      (RollingLocationLogAppender) appenderContext.getLogger(RollingLocationLogAppenderTest.class)
+        .getAppender("rollingAppender");
+    // override close interval to 20 seconds for testing
+    rollingAppender.setFileCloseInterval(TimeUnit.SECONDS.toMillis(20));
+
+    addTagsToMdc("testNs", "testApp");
+    Logger logger = appenderContext.getLogger(RollingLocationLogAppenderTest.class);
+    ingestLogs(logger, 20);
+
+    // wait for 1 min so that file is eligible for closing
+    Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+    // flush to make sure file is closed
+    rollingAppender.flush();
+    Assert.assertEquals(0, rollingAppender.getLocationManager().getActiveLocations().size());
   }
 
   private void ingestLogs(Logger logger, int entries) {
