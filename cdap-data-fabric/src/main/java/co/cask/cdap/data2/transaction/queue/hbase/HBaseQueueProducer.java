@@ -47,10 +47,12 @@ public class HBaseQueueProducer extends AbstractQueueProducer implements Closeab
   private final byte[] queueRowPrefix;
   private final HTable hTable;
   private final List<byte[]> rollbackKeys;
+  private final byte[] txMaxLifeTimeInMillis;
 
   public HBaseQueueProducer(HTable hTable, QueueName queueName,
                             QueueMetrics queueMetrics, HBaseQueueStrategy queueStrategy,
-                            Iterable<? extends ConsumerGroupConfig> consumerGroupConfigs) {
+                            Iterable<? extends ConsumerGroupConfig> consumerGroupConfigs,
+                            byte[] txMaxLifeTimeInMillis) {
     super(queueMetrics, queueName);
     this.queueStrategy = queueStrategy;
     // Make sure only one config per consumer group
@@ -67,6 +69,7 @@ public class HBaseQueueProducer extends AbstractQueueProducer implements Closeab
     this.queueRowPrefix = QueueEntryRow.getQueueRowPrefix(queueName);
     this.rollbackKeys = Lists.newArrayList();
     this.hTable = hTable;
+    this.txMaxLifeTimeInMillis = txMaxLifeTimeInMillis;
   }
 
   @Override
@@ -101,7 +104,7 @@ public class HBaseQueueProducer extends AbstractQueueProducer implements Closeab
         Put put = new Put(rowKey);
         put.add(QueueEntryRow.COLUMN_FAMILY, QueueEntryRow.DATA_COLUMN, entry.getData());
         put.add(QueueEntryRow.COLUMN_FAMILY, QueueEntryRow.META_COLUMN, metaData);
-
+        put.setAttribute("cdap.tx.max.lifetime.millis", txMaxLifeTimeInMillis);
         puts.add(put);
 
         bytes += entry.getData().length;
@@ -125,6 +128,7 @@ public class HBaseQueueProducer extends AbstractQueueProducer implements Closeab
     List<Delete> deletes = Lists.newArrayList();
     for (byte[] rowKey : rollbackKeys) {
       Delete delete = new Delete(rowKey);
+      delete.setAttribute("cdap.tx.max.lifetime.millis", txMaxLifeTimeInMillis);
       deletes.add(delete);
     }
     hTable.delete(deletes);
