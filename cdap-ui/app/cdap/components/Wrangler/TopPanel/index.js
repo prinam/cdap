@@ -17,6 +17,8 @@
 import React, { Component } from 'react';
 import WorkspaceModal from 'components/Wrangler/TopPanel/WorkspaceModal';
 import WranglerStore from 'components/Wrangler/store';
+import SchemaModal from 'components/Wrangler/TopPanel/SchemaModal';
+import AddToPipelineModal from 'components/Wrangler/TopPanel/AddToPipelineModal';
 require('./TopPanel.scss');
 
 export default class WranglerTopPanel extends Component {
@@ -26,10 +28,14 @@ export default class WranglerTopPanel extends Component {
     let initialWorkspace = WranglerStore.getState().wrangler.workspaceId;
     this.state = {
       workspaceId: initialWorkspace,
-      workspaceModal: false
+      workspaceModal: false,
+      schemaModal: false,
+      addToPipelineModal: false
     };
 
     this.toggleWorkspaceModal = this.toggleWorkspaceModal.bind(this);
+    this.toggleSchemaModal = this.toggleSchemaModal.bind(this);
+    this.toggleAddToPipelineModal = this.toggleAddToPipelineModal.bind(this);
 
     this.sub = WranglerStore.subscribe(() => {
       let storeWorkspace = WranglerStore.getState().wrangler.workspaceId;
@@ -48,11 +54,35 @@ export default class WranglerTopPanel extends Component {
     this.setState({workspaceModal: !this.state.workspaceModal});
   }
 
+  toggleSchemaModal() {
+    this.setState({schemaModal: !this.state.schemaModal});
+  }
+
+  toggleAddToPipelineModal() {
+    this.setState({addToPipelineModal: !this.state.addToPipelineModal});
+  }
+
   renderWorkspaceModal() {
     if (!this.state.workspaceModal) { return null; }
 
     return (
       <WorkspaceModal toggle={this.toggleWorkspaceModal} />
+    );
+  }
+
+  renderSchemaModal() {
+    if (!this.state.schemaModal) { return null; }
+
+    return (
+      <SchemaModal toggle={this.toggleSchemaModal} />
+    );
+  }
+
+  renderAddToPipelineModal() {
+    if (!this.state.addToPipelineModal) { return null; }
+
+    return (
+      <AddToPipelineModal toggle={this.toggleAddToPipelineModal} />
     );
   }
 
@@ -68,6 +98,27 @@ export default class WranglerTopPanel extends Component {
             {this.state.workspaceId}
             {this.renderWorkspaceModal()}
           </span>
+
+          <em className="experimental-label">Experimental</em>
+        </div>
+
+        <div className="action-buttons float-xs-right">
+          <button
+            className="btn btn-primary"
+            onClick={this.toggleAddToPipelineModal}
+          >
+            Add to Pipeline
+          </button>
+
+          {this.renderAddToPipelineModal()}
+
+          <button
+            className="btn btn-secondary"
+            onClick={this.toggleSchemaModal}
+          >
+            View Schema
+          </button>
+          {this.renderSchemaModal()}
         </div>
       </div>
     );

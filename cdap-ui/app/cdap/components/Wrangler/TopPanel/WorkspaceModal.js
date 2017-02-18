@@ -72,8 +72,6 @@ export default class WorkspaceModal extends Component {
 
     MyWranglerApi.execute(params)
       .subscribe((res) => {
-        console.log('res', res);
-
         cookie.save('WRANGLER_WORKSPACE', workspaceId);
 
         WranglerStore.dispatch({
@@ -290,12 +288,13 @@ export default class WorkspaceModal extends Component {
                 <h5>
                   Current Active Workspace: <em>{this.state.activeWorkspace}</em>
                 </h5>
+                <hr/>
               </div>
             ) : null
           }
 
           <div>
-            <h4>Set or Create New Workspace</h4>
+            <h5>Set or Create New Workspace</h5>
             <small>Create workspace before starting to wrangle</small>
             <input
               type="text"

@@ -24,7 +24,30 @@
       cursor: pointer;
       font-size: 18px;
       line-height: 50px;
+
+      .experimental-label {
+        margin-left: 100px;
+        font-size: 14px;
+      }
     }
+
+    .action-buttons {
+      padding-right: 15px;
+      margin-top: 10px;
+
+      .btn { margin-left: 10px; }
+    }
+  }
+}
+
+.wrangler-schema-modal,
+.workspace-management-modal,
+.add-to-hydrator-wrangler-modal {
+  .close-section {
+    cursor: pointer;
+  }
+  .modal-body {
+    overflow-y: auto;
   }
 }
 
@@ -36,6 +59,32 @@
       .btn:not(:first-child) {
         margin-left: 5px;
       }
+    }
+  }
+}
+
+.add-to-hydrator-wrangler-modal.modal-dialog {
+  .modal-body {
+    padding: 0;
+
+    .message { padding: 15px; }
+
+    .action-buttons {
+      margin-top: 10px;
+      width: 100%;
+      display: inline-flex;
+
+      .btn {
+        width: 50%;
+        border-radius: 0;
+        border: none;
+        border-top: 1px solid #cccccc;
+        padding: 10px 0;
+
+        &:first-child { border-right: 1px solid #cccccc; }
+        .fa { margin-right: 10px; }
+      }
+
     }
   }
 }
