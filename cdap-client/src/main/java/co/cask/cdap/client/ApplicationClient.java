@@ -41,6 +41,7 @@ import co.cask.common.http.HttpResponse;
 import co.cask.common.http.ObjectResponse;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -522,10 +523,29 @@ public class ApplicationClient {
    */
   public void deploy(NamespaceId namespace, File jarFile,
                      @Nullable String appConfig) throws IOException, UnauthenticatedException {
+    deploy(namespace, jarFile, appConfig, null);
+  }
+
+  /**
+   * Deploys an application with a serialized application configuration string and an owner.
+   *
+   * @param namespace namespace to which the application should be deployed
+   * @param jarFile jar file of the application to deploy
+   * @param appConfig serialized application configuration
+   * @param ownerPrincipal the principal of application owner
+   * @throws IOException if a network error occurred
+   * @throws UnauthenticatedException if the request is not authorized successfully in the gateway server
+   */
+  public void deploy(NamespaceId namespace, File jarFile,
+                     @Nullable String appConfig,
+                     @Nullable String ownerPrincipal) throws IOException, UnauthenticatedException {
     Map<String, String> headers = new HashMap<>();
     headers.put("X-Archive-Name", jarFile.getName());
     if (appConfig != null) {
       headers.put("X-App-Config", appConfig);
+    }
+    if (!Strings.isNullOrEmpty(ownerPrincipal)) {
+      headers.put("X-Principal", ownerPrincipal);
     }
     deployApp(namespace, jarFile, headers);
   }

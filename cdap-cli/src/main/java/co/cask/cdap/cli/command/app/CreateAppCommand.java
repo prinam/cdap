@@ -65,16 +65,18 @@ public class CreateAppCommand extends AbstractAuthCommand {
     ArtifactSummary artifact = new ArtifactSummary(artifactName, artifactVersion, artifactScope);
 
     JsonObject config = new JsonObject();
+    String ownerPrincipal = null;
     String configPath = arguments.getOptional(ArgumentName.APP_CONFIG_FILE.toString());
     if (configPath != null) {
       File configFile = resolver.resolvePathToFile(configPath);
       try (FileReader reader = new FileReader(configFile)) {
         AppRequest<JsonObject> appRequest = GSON.fromJson(reader, configType);
         config = appRequest.getConfig();
+        ownerPrincipal = appRequest.getOwnerPrincipal();
       }
     }
 
-    AppRequest<JsonObject> appRequest = new AppRequest<>(artifact, config);
+    AppRequest<JsonObject> appRequest = new AppRequest<>(artifact, config, ownerPrincipal);
     applicationClient.deploy(appId, appRequest);
     output.println("Successfully created application");
   }

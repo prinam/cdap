@@ -212,6 +212,7 @@ ApplicationLifecycleService extends AbstractIdleService {
 
     for (ApplicationId appId : appIds) {
       ApplicationSpecification appSpec = store.getApplication(appId);
+      KerberosPrincipalId owner = ownerAdmin.getOwner(appId);
       if (appSpec == null) {
         continue;
       }
@@ -220,7 +221,8 @@ ApplicationLifecycleService extends AbstractIdleService {
       ArtifactId artifactId = appSpec.getArtifactId();
       ArtifactSummary artifactSummary = artifactId == null ?
         new ArtifactSummary(appSpec.getName(), null) : ArtifactSummary.from(artifactId);
-      ApplicationRecord record = new ApplicationRecord(artifactSummary, appId, appSpec.getDescription());
+      ApplicationRecord record = new ApplicationRecord(artifactSummary, appId, appSpec.getDescription(),
+                                                       owner.getPrincipal());
       if (predicate.apply(record)) {
         appRecords.add(record);
       }
