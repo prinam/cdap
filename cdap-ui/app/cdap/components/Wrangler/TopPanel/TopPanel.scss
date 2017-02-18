@@ -17,18 +17,12 @@
 .wrangler-container {
   .top-panel {
     height: 50px;
-    border-bottom: 1px solid #cccccc;
 
     .workspace-mgmt {
       padding-left: 10px;
       cursor: pointer;
       font-size: 18px;
       line-height: 50px;
-
-      .experimental-label {
-        margin-left: 100px;
-        font-size: 14px;
-      }
     }
 
     .action-buttons {

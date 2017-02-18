@@ -98,8 +98,6 @@ export default class WranglerTopPanel extends Component {
             {this.state.workspaceId}
             {this.renderWorkspaceModal()}
           </span>
-
-          <em className="experimental-label">Experimental</em>
         </div>
 
         <div className="action-buttons float-xs-right">

@@ -19,6 +19,7 @@ import WranglerStore from 'components/Wrangler/store';
 import MyWranglerApi from 'api/wrangler';
 import shortid from 'shortid';
 import ColumnsTabRow from 'components/Wrangler/WranglerSidePanel/ColumnsTabRow';
+import {objectQuery} from 'services/helpers';
 
 export default class ColumnsTab extends Component {
   constructor(props) {
@@ -26,7 +27,9 @@ export default class ColumnsTab extends Component {
 
     this.state = {
       columns: {},
-      headers: []
+      headers: [],
+      loading: true,
+      error: null
     };
 
     this.sub = WranglerStore.subscribe(this.getSummary.bind(this));
@@ -55,14 +58,15 @@ export default class ColumnsTab extends Component {
 
         state.headers.forEach((head) => {
           columns[head] = {
-            general: res.value.statistics[head].general,
-            types: res.value.statistics[head].types,
-            isValid: res.value.validation[head].valid
+            general: objectQuery(res, 'value', 'statistics', head, 'general'),
+            types: objectQuery(res, 'value', 'statistics', head, 'types'),
+            isValid: objectQuery(res, 'value', 'validation', head, 'valid')
           };
         });
 
         this.setState({
           columns,
+          loading: false,
           headers: state.headers.map((res) => {
             let obj = {
               name: res,
@@ -73,10 +77,22 @@ export default class ColumnsTab extends Component {
         });
       }, (err) => {
         console.log('error fetching summary', err);
+        this.setState({
+          loading: false,
+          error: err.message
+        });
       });
   }
 
   render() {
+    if (this.state.loading) {
+      return (
+        <div className="columns-tab text-xs-center">
+          <span className="fa fa-spin fa-spinner" />
+        </div>
+      );
+    }
+
     return (
       <div className="columns-tab">
         {

@@ -93,7 +93,7 @@ export default class WranglerCLI extends Component {
         </div>
 
         <div className="input-container">
-          <strong>Directive: /&gt;</strong>
+          <strong>$</strong>
           <div className="directive-input">
             <input
               type="text"
@@ -103,6 +103,8 @@ export default class WranglerCLI extends Component {
               onKeyDown={this.handleKeyDown}
             />
           </div>
+
+          <strong className="float-xs-right experimental-label">EXPERIMENTAL FEATURE</strong>
 
         </div>
       </div>

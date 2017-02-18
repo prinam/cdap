@@ -33,16 +33,28 @@
     }
 
     .input-container {
+      background-color: black;
+      color: #27ae60;
+      font-family: "Courier New", Courier, monospace;
       strong {
-        margin: 0 10px;
+        margin-left: 10px;
         user-select: none;
       }
+
+      .experimental-label {
+        line-height: 32px;
+        margin-right: 10px;
+      }
       .directive-input {
-        width: calc(100% - 110px);
+        width: calc(100% - 200px);
         display: inline-block;
 
         .form-control {
           border: 0;
+          background-color: black;
+          color: #27ae60;
+          font-family: "Courier New", Courier, monospace;
+          font-size: 14px;
         }
       }
     }
