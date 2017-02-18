@@ -39,7 +39,7 @@ export default class ProgramsTab extends Component {
       !isNil(this.props.entity) &&
       !isEmpty(this.props.entity)
     ) {
-      this.setRunninPrograms();
+      this.setRunningPrograms();
     }
   }
   componentWillReceiveProps(nextProps) {
@@ -50,10 +50,13 @@ export default class ProgramsTab extends Component {
         runningPrograms: []
       });
       this.statusSubscriptions.forEach(sub => sub.dispose());
-      this.setRunninPrograms();
+      this.setRunningPrograms();
     }
   }
-  setRunninPrograms() {
+  componentWillUnmount() {
+    this.statusSubscriptions.forEach(sub => sub.dispose());
+  }
+  setRunningPrograms() {
     let namespace = NamespaceStore.getState().selectedNamespace;
     this.state
         .entity
@@ -93,9 +96,6 @@ export default class ProgramsTab extends Component {
             });
           this.statusSubscriptions.push(subscription);
         });
-  }
-  componentWillUnmount() {
-    this.statusSubscriptions.forEach(sub => sub.dispose());
   }
   render() {
     let runningProgramsCount = 0;

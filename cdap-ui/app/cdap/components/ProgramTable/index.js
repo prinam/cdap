@@ -14,63 +14,138 @@
  * the License.
  */
 
-import React, {PropTypes} from 'react';
+import React, {Component, PropTypes} from 'react';
 import FastActions from 'components/EntityCard/FastActions';
 import shortid from 'shortid';
 import {humanReadableDate} from 'services/helpers';
-require('./ProgramTable.scss');
 import T from 'i18n-react';
 import isEmpty from 'lodash/isEmpty';
+import orderBy from 'lodash/orderBy';
+import moment from 'moment';
+require('./ProgramTable.scss');
 
-export default function ProgramTable({programs}) {
-  let entities = programs.map(prog => {
-    return Object.assign({}, prog, {
-      applicationId: prog.app,
-      programType: prog.type,
-      type: 'program',
-      id: prog.id,
-      uniqueId: shortid.generate()
+export default class ProgramTable extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      entities: [],
+      sortByColumn: 'name',
+      sortOrder: 'asc'
+    };
+  }
+
+  componentWillMount() {
+    let entities = this.props.programs.map(prog => {
+      return Object.assign({}, prog, {
+        applicationId: prog.app,
+        programType: prog.type,
+        type: 'program',
+        id: prog.id,
+        uniqueId: shortid.generate()
+      });
     });
-  });
-  return (
-    <div className="program-table">
-      <table className="table table-bordered">
-      <thead>
-        <tr>
-          <th>{T.translate('features.ViewSwitch.nameLabel')}</th>
-          <th>{T.translate('features.ViewSwitch.typeLabel')}</th>
-          <th>{T.translate('features.ViewSwitch.ProgramTable.lastStartedLabel')}</th>
-          <th>{T.translate('features.ViewSwitch.ProgramTable.statusLabel')}</th>
-          <th>{T.translate('features.ViewSwitch.actionsLabel')}</th>
-        </tr>
-      </thead>
-      <tbody>
+    this.setState({
+      entities
+    });
+  }
+
+  sortBy(column) {
+    let entities = this.state.entities;
+    let sortOrder = this.state.sortOrder;
+    let sortByColumn = this.state.sortByColumn;
+    if (sortByColumn === column) {
+      if (sortOrder === 'asc') { // already sorting in this column, sort the other way
+        sortOrder = 'desc';
+      } else {
+        sortOrder = 'asc';
+      }
+    } else { // a new sort, so start with ascending sort
+      sortByColumn = column;
+      sortOrder = 'asc';
+    }
+    // have to convert latestRun back from string to seconds from epoch
+    if (sortByColumn === 'latestRun') {
+      entities = orderBy(entities, [function(entity) {return moment(entity.latestRun).valueOf()}], [sortOrder]);
+    } else {
+      entities = orderBy(entities, [sortByColumn], [sortOrder]);
+    }
+    this.setState({
+      entities,
+      sortOrder,
+      sortByColumn
+    });
+  }
+
+  renderSortableColumnHeader(column, columnLabel) {
+    if (this.state.sortByColumn !== column) {
+      return (
+        <span onClick={this.sortBy.bind(this, column)}>
+          {columnLabel}
+        </span>
+      );
+    }
+    return (
+      <span onClick={this.sortBy.bind(this, column)}>
+        <span className="text-underline">{columnLabel}</span>
         {
-          entities.map(program => {
-            return (
-              <tr key={program.name}>
-                <td>{program.name}</td>
-                <td>{program.programType}</td>
-                <td>{
-                  !isEmpty(program.latestRun) ? humanReadableDate(program.latestRun.start) : 'n/a'
-                }</td>
-                <td>{program.status}</td>
-                <td>
-                  <div className="fast-actions-container">
-                    <FastActions
-                      className="text-xs-left"
-                      entity={program}
-                    />
-                  </div>
-                </td>
-              </tr>
-            );
-          })
+          this.state.sortOrder === 'asc' ?
+            <i className="fa fa-caret-down fa-lg"></i>
+          :
+            <i className="fa fa-caret-up fa-lg"></i>
         }
-      </tbody>
-      </table>
-    </div>
-  );
+      </span>
+    );
+  }
+
+  render() {
+    return (
+      <div className="program-table">
+        <table className="table table-bordered">
+        <thead>
+          <tr>
+            <th>
+              {this.renderSortableColumnHeader('name', T.translate('features.ViewSwitch.nameLabel'))}
+            </th>
+            <th>
+              {this.renderSortableColumnHeader('programType', T.translate('features.ViewSwitch.typeLabel'))}
+            </th>
+            <th>
+              {this.renderSortableColumnHeader('latestRun', T.translate('features.ViewSwitch.ProgramTable.lastStartedLabel'))}
+            </th>
+            <th>
+              {this.renderSortableColumnHeader('status', T.translate('features.ViewSwitch.ProgramTable.statusLabel'))}
+            </th>
+            <th>{T.translate('features.ViewSwitch.actionsLabel')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            this.state.entities.map(program => {
+              return (
+                <tr key={program.name}>
+                  <td>{program.name}</td>
+                  <td>{program.programType}</td>
+                  <td>{
+                    !isEmpty(program.latestRun) ? humanReadableDate(program.latestRun.start) : 'n/a'
+                  }</td>
+                  <td>{program.status}</td>
+                  <td>
+                    <div className="fast-actions-container">
+                      <FastActions
+                        className="text-xs-left"
+                        entity={program}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
+          }
+        </tbody>
+        </table>
+      </div>
+    );
+  }
 }
 ProgramTable.propTypes = {
   programs: PropTypes.arrayOf(PropTypes.object)
