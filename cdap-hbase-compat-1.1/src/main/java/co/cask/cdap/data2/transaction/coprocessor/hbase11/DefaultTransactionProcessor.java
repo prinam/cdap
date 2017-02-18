@@ -111,7 +111,7 @@ public class DefaultTransactionProcessor extends TransactionProcessor {
     }
 
     boolean validLifetime =
-      TxUtils.getTimestamp(tx.getTransactionId()) + maxLifetimeMillis > System.currentTimeMillis();
+      (TxUtils.getTimestamp(tx.getTransactionId()) + maxLifetimeMillis) > System.currentTimeMillis();
     if (!validLifetime) {
       throw new DoNotRetryIOException(String.format("Transaction %s has exceeded max lifetime %s ms",
                                                     tx.getTransactionId(), maxLifetimeMillis));
