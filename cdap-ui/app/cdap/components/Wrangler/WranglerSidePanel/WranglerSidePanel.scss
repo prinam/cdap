@@ -69,5 +69,30 @@ $tab-header-height: 35px;
         td .fa.fa-times { cursor: pointer; }
       }
     }
+
+    .columns-tab {
+      .columns-tab-row {
+        border-bottom: 1px solid #cccccc;
+
+        .row-header {
+          padding: 5px 10px;
+          cursor: pointer;
+
+          &.expanded {
+            background-color: #dedede;
+          }
+
+          &.invalid {
+            background-color: #c0392b;
+            color: white;
+          }
+        }
+
+        .expanded-row {
+          background-color: #dedede;
+          padding: 10px;
+        }
+      }
+    }
   }
 }

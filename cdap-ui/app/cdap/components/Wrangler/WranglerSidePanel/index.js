@@ -20,6 +20,7 @@ import WranglerActions from 'components/Wrangler/store/WranglerActions';
 import shortid from 'shortid';
 import classnames from 'classnames';
 import MyWranglerApi from 'api/wrangler';
+import ColumnsTab from 'components/Wrangler/WranglerSidePanel/ColumnsTab';
 
 require('./WranglerSidePanel.scss');
 
@@ -49,9 +50,9 @@ export default class WranglerSidePanel extends Component {
       summary: {}
     };
 
-    this.getSummary();
+    // this.getSummary();
 
-    WranglerStore.subscribe(() => {
+    this.sub = WranglerStore.subscribe(() => {
       let state = WranglerStore.getState().wrangler;
 
       this.setState({
@@ -71,43 +72,52 @@ export default class WranglerSidePanel extends Component {
         })
       });
 
-      this.getSummary();
+      // this.getSummary();
     });
   }
 
-  getSummary() {
-    let state = WranglerStore.getState().wrangler;
-    let params = {
-      namespace: 'default',
-      workspaceId: 'test',
-      limit: 100,
-      directive: state.directives
-    };
-
-    MyWranglerApi.summary(params)
-      .subscribe((res) => {
-        let nonNullMap = {};
-        state.headers.forEach((head) => {
-          nonNullMap[head] = res.value.statistics[head].general['non-null'];
-        });
-        this.setState({summary: nonNullMap});
-      }, (err) => {
-        console.log('error fetching summary', err);
-      });
+  componentWillUnmount() {
+    this.sub();
   }
+
+  // getSummary() {
+  //   let state = WranglerStore.getState().wrangler;
+  //   if (!state.workspaceId) { return; }
+
+  //   let params = {
+  //     namespace: 'default',
+  //     workspaceId: state.workspaceId,
+  //     limit: 100,
+  //     directive: state.directives
+  //   };
+
+  //   MyWranglerApi.summary(params)
+  //     .subscribe((res) => {
+  //       console.log('res', res);
+
+  //       let nonNullMap = {};
+  //       state.headers.forEach((head) => {
+  //         nonNullMap[head] = res.value.statistics[head].general['non-null'];
+  //       });
+  //       this.setState({summary: nonNullMap});
+  //     }, (err) => {
+  //       console.log('error fetching summary', err);
+  //     });
+  // }
 
   setActiveTab(tab) {
     this.setState({activeTab: tab});
   }
 
   deleteDirective(index) {
-    let directives = WranglerStore.getState().wrangler.directives;
+    let state = WranglerStore.getState().wrangler;
+    let directives = state.directives;
 
     let newDirectives = directives.slice(0, index);
 
     let params = {
       namespace: 'default',
-      workspaceId: 'test',
+      workspaceId: state.workspaceId,
       limit: 100,
       directive: newDirectives
     };
@@ -151,26 +161,7 @@ export default class WranglerSidePanel extends Component {
 
     return (
       <div className="tab-content">
-        <table className="table">
-          <thead>
-            <th>#</th>
-            <th>Name</th>
-            <th>Quality</th>
-          </thead>
-          <tbody>
-            {
-              this.state.headers.map((head, index) => {
-                return (
-                  <tr key={head.uniqueId}>
-                    <td>{index + 1}</td>
-                    <td>{head.name}</td>
-                    <td>{this.state.summary[head.name]}%</td>
-                  </tr>
-                );
-              })
-            }
-          </tbody>
-        </table>
+        <ColumnsTab />
       </div>
     );
   }

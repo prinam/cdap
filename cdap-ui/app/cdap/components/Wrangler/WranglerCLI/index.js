@@ -51,9 +51,11 @@ export default class WranglerCLI extends Component {
     let store = WranglerStore.getState().wrangler;
     let updatedDirectives = store.directives.concat([this.state.directiveInput]);
 
+    let workspaceId = store.workspaceId;
+
     let params = {
       namespace: 'default',
-      workspaceId: 'test',
+      workspaceId: workspaceId,
       limit: 100,
       directive: updatedDirectives
     };
