@@ -39,7 +39,7 @@ export default class StartStopAction extends Component {
       modal: false,
       tooltipOpen: false,
       errorMessage: '',
-      extendedMessage: '',
+      extendedMessage: ''
     };
 
     this.startStop;
@@ -112,16 +112,23 @@ export default class StartStopAction extends Component {
     if (this.state.status === 'RUNNING' || this.state.status === 'STARTING') {
       this.startStop = 'stop';
       icon = 'fa fa-stop text-danger';
-      confirmBtnText = "stopConfirmLabel";
+      confirmBtnText = 'stopConfirmLabel';
       headerText = T.translate('features.FastAction.stopProgramHeader');
       confirmationText = T.translate('features.FastAction.stopConfirmation', {entityId: this.props.entity.id});
-    } else {
+    } else if (this.state.status === 'STOPPED') {
       this.startStop = 'start';
       icon = 'fa fa-play text-success';
-      confirmBtnText = "startConfirmLabel";
+      confirmBtnText = 'startConfirmLabel';
       headerText = T.translate('features.FastAction.startProgramHeader');
       confirmationText = T.translate('features.FastAction.startConfirmation', {entityId: this.props.entity.id});
+    } else { // loading
+      if (this.startStop === 'stop') {
+        headerText = T.translate('features.FastAction.stopProgramHeader');
+      } else {
+        headerText = T.translate('features.FastAction.startProgramHeader');
+      }
     }
+
     let tooltipID = `${this.props.entity.uniqueId}-${this.startStop}`;
 
     return (
