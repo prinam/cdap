@@ -1320,6 +1320,22 @@
   </property>
 
   <property>
+    <name>master.hbase.client.retries.number</name>
+    <value>2</value>
+    <description>
+      Maximum number of retries while performing HBase operations from master services
+    </description>
+  </property>
+
+  <property>
+    <name>master.hbase.rpc.timeout</name>
+    <value>15000</value>
+    <description>
+      RPC timeout from HBase operations performed from master services
+    </description>
+  </property>
+
+  <property>
     <name>master.service.max.instances</name>
     <value>5</value>
     <description>
@@ -2937,22 +2953,6 @@
     <value>60000</value>
     <description>
       Read timeout in milliseconds for internal HTTP requests
-    </description>
-  </property>
-
-  <property>
-    <name>master.hbase.client.retries.number</name>
-    <value>2</value>
-    <description>
-      Maximum number of retries while performing HBase operations from master services
-    </description>
-  </property>
-
-  <property>
-    <name>master.hbase.rpc.timeout</name>
-    <value>15000</value>
-    <description>
-      RPC timeout from HBase operations performed from master services
     </description>
   </property>
 </configuration>
