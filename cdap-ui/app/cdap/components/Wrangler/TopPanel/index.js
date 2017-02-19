@@ -19,6 +19,8 @@ import WorkspaceModal from 'components/Wrangler/TopPanel/WorkspaceModal';
 import WranglerStore from 'components/Wrangler/store';
 import SchemaModal from 'components/Wrangler/TopPanel/SchemaModal';
 import AddToPipelineModal from 'components/Wrangler/TopPanel/AddToPipelineModal';
+import ee from 'event-emitter';
+
 require('./TopPanel.scss');
 
 export default class WranglerTopPanel extends Component {
@@ -36,18 +38,21 @@ export default class WranglerTopPanel extends Component {
     this.toggleWorkspaceModal = this.toggleWorkspaceModal.bind(this);
     this.toggleSchemaModal = this.toggleSchemaModal.bind(this);
     this.toggleAddToPipelineModal = this.toggleAddToPipelineModal.bind(this);
+    this.eventEmitter = ee(ee);
+
+    this.eventEmitter.on('WRANGLER_NO_WORKSPACE_ID', this.toggleWorkspaceModal);
 
     this.sub = WranglerStore.subscribe(() => {
       let storeWorkspace = WranglerStore.getState().wrangler.workspaceId;
       this.setState({
-        workspaceId: storeWorkspace,
-        workspaceModal: storeWorkspace.length === 0 ? true : false
+        workspaceId: storeWorkspace
       });
     });
   }
 
   componentWillUnmount() {
     this.sub();
+    this.eventEmitter.off('WRANGLER_NO_WORKSPACE_ID', this.toggleWorkspaceModal);
   }
 
   toggleWorkspaceModal() {
@@ -98,6 +103,7 @@ export default class WranglerTopPanel extends Component {
             {this.state.workspaceId}
             {this.renderWorkspaceModal()}
           </span>
+          <span className="fa fa-pencil" />
         </div>
 
         <div className="action-buttons float-xs-right">

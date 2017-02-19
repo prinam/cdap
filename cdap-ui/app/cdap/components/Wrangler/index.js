@@ -23,45 +23,53 @@ import MyWranglerApi from 'api/wrangler';
 import cookie from 'react-cookie';
 import WranglerStore from 'components/Wrangler/store';
 import WranglerActions from 'components/Wrangler/store/WranglerActions';
+import ee from 'event-emitter';
 
 require('./Wrangler.scss');
 
 export default class Wrangler extends Component {
   constructor(props) {
     super(props);
+
+    this.eventEmitter = ee(ee);
   }
 
   componentWillMount() {
     let workspaceId = cookie.load('WRANGLER_WORKSPACE');
-    if (workspaceId) {
-      let params = {
-        namespace: 'default',
-        workspaceId: workspaceId,
-        limit: 100
-      };
+    let params = {
+      namespace: 'default',
+      workspaceId: workspaceId,
+      limit: 100
+    };
 
-      MyWranglerApi.execute(params)
-        .subscribe((res) => {
-          WranglerStore.dispatch({
-            type: WranglerActions.setWorkspace,
-            payload: {
-              data: res.value,
-              headers: res.header,
-              workspaceId
-            }
-          });
-        }, (err) => {
-          console.log('Init Error', err);
-          cookie.remove('WRANGLER_WORKSPACE');
-        });
-    }
-
-    MyWranglerApi.getUsage({
-      namespace: 'default'
-    })
+    MyWranglerApi.execute(params)
       .subscribe((res) => {
-        console.log('directives', res);
+        WranglerStore.dispatch({
+          type: WranglerActions.setWorkspace,
+          payload: {
+            data: res.value,
+            headers: res.header,
+            workspaceId
+          }
+        });
+      }, (err) => {
+        console.log('Init Error', err);
+        cookie.remove('WRANGLER_WORKSPACE');
+        this.eventEmitter.emit('WRANGLER_NO_WORKSPACE_ID');
       });
+
+    // MyWranglerApi.getUsage({
+    //   namespace: 'default'
+    // })
+    //   .subscribe((res) => {
+    //     console.log('directives', res);
+    //   });
+  }
+
+  componentWillUnmount() {
+    WranglerStore.dispatch({
+      type: WranglerActions.reset
+    });
   }
 
   render() {

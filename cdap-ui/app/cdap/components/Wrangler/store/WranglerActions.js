@@ -17,7 +17,8 @@
 const WranglerActions = {
   setData: 'WRANGLER_SET_DATA',
   setDirectives: 'WRANGLER_SET_DIRECTIVES',
-  setWorkspace: 'WRANGLER_SET_WORKSPACE'
+  setWorkspace: 'WRANGLER_SET_WORKSPACE',
+  reset: 'WRANGLER_RESET'
 };
 
 export default WranglerActions;

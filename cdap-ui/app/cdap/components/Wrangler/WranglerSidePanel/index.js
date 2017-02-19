@@ -71,39 +71,12 @@ export default class WranglerSidePanel extends Component {
           return obj;
         })
       });
-
-      // this.getSummary();
     });
   }
 
   componentWillUnmount() {
     this.sub();
   }
-
-  // getSummary() {
-  //   let state = WranglerStore.getState().wrangler;
-  //   if (!state.workspaceId) { return; }
-
-  //   let params = {
-  //     namespace: 'default',
-  //     workspaceId: state.workspaceId,
-  //     limit: 100,
-  //     directive: state.directives
-  //   };
-
-  //   MyWranglerApi.summary(params)
-  //     .subscribe((res) => {
-  //       console.log('res', res);
-
-  //       let nonNullMap = {};
-  //       state.headers.forEach((head) => {
-  //         nonNullMap[head] = res.value.statistics[head].general['non-null'];
-  //       });
-  //       this.setState({summary: nonNullMap});
-  //     }, (err) => {
-  //       console.log('error fetching summary', err);
-  //     });
-  // }
 
   setActiveTab(tab) {
     this.setState({activeTab: tab});

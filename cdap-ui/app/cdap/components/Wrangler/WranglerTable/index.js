@@ -31,7 +31,7 @@ export default class WranglerTable extends Component {
       data: storeState.headers
     };
 
-    WranglerStore.subscribe(() => {
+    this.sub = WranglerStore.subscribe(() => {
       let state = WranglerStore.getState().wrangler;
 
       this.setState({
@@ -39,6 +39,10 @@ export default class WranglerTable extends Component {
         headers: state.headers
       });
     });
+  }
+
+  componentWillUnmount() {
+    this.sub();
   }
 
   render() {

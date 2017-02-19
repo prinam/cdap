@@ -112,6 +112,8 @@ export default class AddToHydratorModal extends Component {
           batchUrl
         });
 
+      }, (err) => {
+        console.log('Failed to fetch schema', err);
       });
   }
 

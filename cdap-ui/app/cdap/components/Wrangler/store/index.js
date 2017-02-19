@@ -54,6 +54,8 @@ const wrangler = (state = defaultInitialState, action = defaultAction) => {
         data: action.payload.data || []
       });
       break;
+    case WranglerActions.reset:
+      return defaultInitialState;
     default:
       return state;
   }
