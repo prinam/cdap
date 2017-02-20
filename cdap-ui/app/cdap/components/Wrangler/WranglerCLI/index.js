@@ -37,6 +37,12 @@ export default class WranglerCLI extends Component {
     this.toggleAutoComplete = this.toggleAutoComplete.bind(this);
   }
 
+  componentDidMount() {
+    if (this.directiveRef) {
+      this.directiveRef.focus();
+    }
+  }
+
   handleDirectiveChange(e) {
     this.setState({
       directiveInput: e.target.value,
