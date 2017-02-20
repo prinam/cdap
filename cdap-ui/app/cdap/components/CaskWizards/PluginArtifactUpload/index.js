@@ -55,15 +55,15 @@ export default class PluginArtifactUploadWizard extends Component {
   }
   buildSuccessInfo() {
     let state = PluginArtifactUploadStore.getState();
-    let name = state.upload.jar.fileMetadataObj.name;
+    let pluginName = state.upload.jar.fileMetadataObj.name;
     let namespace = NamespaceStore.getState().selectedNamespace;
-    let defaultSuccessMessage = T.translate('features.Wizard.PluginArtifact.success');
+    let message = T.translate('features.Wizard.PluginArtifact.success', {pluginName});
     let subtitle = T.translate('features.Wizard.PluginArtifact.subtitle');
     let buttonLabel = T.translate('features.Wizard.PluginArtifact.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
     this.setState({
       successInfo: {
-        message: `${defaultSuccessMessage} "${name}".`,
+        message,
         subtitle,
         buttonLabel,
         buttonUrl: window.getHydratorUrl({
@@ -73,7 +73,9 @@ export default class PluginArtifactUploadWizard extends Component {
           }
         }),
         linkLabel,
-        linkUrl: `/cdap/ns/${namespace}`
+        linkUrl: window.getAbsUIUrl({
+          namespaceId: namespace
+        })
       }
     });
   }

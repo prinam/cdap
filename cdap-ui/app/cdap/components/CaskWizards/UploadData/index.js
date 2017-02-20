@@ -54,9 +54,14 @@ export default class UploadDataWizard extends Component {
     if (!this.props.isUsecase) {
       this.buildSuccessInfo(packagename, streamId, currentNamespace);
     }
+    let streamUrl = window.getAbsUIUrl({
+      namespaceId: currentNamespace,
+      entityType: 'streams',
+      entityId: streamId
+    });
 
     return UploadDataActionCreator.uploadData({
-      url: `/namespaces/${currentNamespace}/streams/${streamId}/batch`,
+      url: `${streamUrl}/batch`,
       fileContents,
       headers: {
         filetype,
@@ -107,18 +112,24 @@ export default class UploadDataWizard extends Component {
     });
   }
   buildSuccessInfo(datapackName, streamId, namespace) {
-    let defaultSuccessMessage = T.translate('features.Wizard.UploadData.success');
-    let subtitle = T.translate('features.Wizard.UploadData.subtitle');
+    let message = T.translate('features.Wizard.UploadData.success', {datapackName});
+    let subtitle = T.translate('features.Wizard.UploadData.subtitle', {streamId});
     let buttonLabel = T.translate('features.Wizard.UploadData.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
     this.setState({
       successInfo: {
-        message: `${defaultSuccessMessage} "${datapackName}".`,
-        subtitle: `${subtitle} "${streamId}".`,
+        message,
+        subtitle,
         buttonLabel,
-        buttonUrl: `/cdap/ns/${namespace}/streams/${streamId}`,
+        buttonUrl: window.getAbsUIUrl({
+          namespaceId: namespace,
+          entityType: 'streams',
+          entityId: streamId
+        }),
         linkLabel,
-        linkUrl: `/cdap/ns/${namespace}`
+        linkUrl: window.getAbsUIUrl({
+          namespaceId: namespace
+        })
       }
     });
   }

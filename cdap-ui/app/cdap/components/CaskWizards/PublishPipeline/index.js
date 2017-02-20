@@ -75,13 +75,13 @@ export default class PublishPipelineWizard extends Component {
       }
     });
   }
-  buildSuccessInfo(name, namespace, draftId) {
-    let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
+  buildSuccessInfo(pipelineName, namespace, draftId) {
+    let message = T.translate('features.Wizard.PublishPipeline.success', {pipelineName});
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
     let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.customize');
     this.setState({
       successInfo: {
-        message: `${defaultSuccessMessage} "${name}".`,
+        message: message,
         buttonLabel,
         buttonUrl: window.getHydratorUrl({
           stateName: 'hydrator.create',
@@ -91,7 +91,9 @@ export default class PublishPipelineWizard extends Component {
           }
         }),
         linkLabel,
-        linkUrl: `/cdap/ns/${namespace}`
+        linkUrl: window.getAbsUIUrl({
+          namespaceId: namespace
+        })
       }
     });
   }

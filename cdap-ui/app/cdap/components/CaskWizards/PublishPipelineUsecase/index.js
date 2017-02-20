@@ -26,14 +26,14 @@ export default class PublishPipelineUsecaseWizard extends Component {
     this.buildSuccessInfo = this.buildSuccessInfo.bind(this);
   }
 
-  buildSuccessInfo(name, namespace) {
+  buildSuccessInfo(pipelineName, namespace) {
     let successInfo = {};
     if (this.props.input.isLastStepInMarket) {
-      let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
+      let message = T.translate('features.Wizard.PublishPipeline.success', {pipelineName});
       let linkLabel = T.translate('features.Wizard.GoToHomePage');
       let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.view');
       successInfo = {
-        message: `${defaultSuccessMessage} "${name}".`,
+        message: message,
         buttonLabel,
         buttonUrl: window.getHydratorUrl({
           stateName: 'hydrator.detail',
@@ -43,7 +43,9 @@ export default class PublishPipelineUsecaseWizard extends Component {
           }
         }),
         linkLabel,
-        linkUrl: `/cdap/ns/${namespace}`
+        linkUrl: window.getAbsUIUrl({
+          namespaceId: namespace
+        })
       };
     }
     return successInfo;

@@ -88,14 +88,19 @@ export default class StreamCreateWizard extends Component {
         () => {
           if (this.props.withUploadStep) {
             // FIXME: I think we can chain this to the next step. TL;DR - will do.
-            let url = `/namespaces/${currentNamespace}/streams/${state.general.name}/batch`;
+            let streamUrl = window.getAbsUIUrl({
+              namespaceId: currentNamespace,
+              entityType: 'streams',
+              entityId: state.general.name
+            });
+            let uploadUrl = `${streamUrl}/batch`;
             let uploadDataState = UploadDataStore.getState();
             let fileContents = uploadDataState.viewdata.data;
             let filename = uploadDataState.viewdata.filename;
             let filetype = 'text/' + filename.split('.').pop();
             return UploadDataActionCreator
               .uploadData({
-                url,
+                url: uploadUrl,
                 fileContents,
                 headers: {
                   filename,

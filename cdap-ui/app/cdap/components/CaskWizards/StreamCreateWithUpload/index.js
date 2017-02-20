@@ -66,14 +66,19 @@ export default class StreamCreateWithUploadWizard extends Component {
         () => {
           if (this.props.withUploadStep) {
             // FIXME: I think we can chain this to the next step. TL;DR - will do.
-            let url = `/namespaces/${currentNamespace}/streams/${state.general.name}/batch`;
+            let streamUrl = window.getAbsUIUrl({
+              namespaceId: currentNamespace,
+              entityType: 'streams',
+              entityId: state.general.name
+            });
+            let uploadUrl = `${streamUrl}/batch`;
             let fileContents = state.upload.data;
             let filename = state.upload.filename;
             let filetype = 'text/' + filename.split('.').pop();
             let authToken = cookie.load('CDAP_Auth_Token');
             return UploadDataActionCreator
               .uploadData({
-                url,
+                url: uploadUrl,
                 fileContents,
                 headers: {
                   filename,
@@ -92,20 +97,27 @@ export default class StreamCreateWithUploadWizard extends Component {
       });
   }
   buildSuccessInfo(streamId, namespace) {
-    let defaultSuccessMessage = T.translate('features.Wizard.StreamCreate.success');
+    let message = T.translate('features.Wizard.StreamCreate.success', {streamName: streamId});
     let buttonLabel = T.translate('features.Wizard.StreamCreate.callToAction');
+    let params = {
+      namespaceId: namespace,
+      entityType: 'streams',
+      entityId: streamId
+    };
+    let buttonUrl = window.getAbsUIUrl(params);
     let linkLabel = T.translate('features.Wizard.StreamCreate.secondaryCallToAction.uploadData');
-    let linkUrl = `/cdap/ns/${namespace}/streams/${streamId}?modalToOpen=sendEvents`;
+    // right now no good way to add query params to AbsUIUrl?
+    let linkUrl = buttonUrl + '?modalToOpen=sendEvents';
     let state = CreateStreamWithUploadStore.getState();
     if (state.upload.data) {
       linkLabel = T.translate('features.Wizard.StreamCreate.secondaryCallToAction.queryStream');
-      linkUrl = `/cdap/ns/${namespace}/streams/${streamId}?modalToOpen=explore`;
+      linkUrl = buttonUrl + '?modalToOpen=explore';
     }
     this.setState({
       successInfo: {
-        message: `${defaultSuccessMessage} "${streamId}".`,
+        message,
         buttonLabel,
-        buttonUrl: `/cdap/ns/${namespace}/streams/${streamId}`,
+        buttonUrl,
         linkLabel,
         linkUrl
       }

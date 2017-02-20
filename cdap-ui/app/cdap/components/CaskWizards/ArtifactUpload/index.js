@@ -62,15 +62,15 @@ export default class ArtifactUploadWizard extends Component {
   }
   buildSuccessInfo() {
     let state = ArtifactUploadStore.getState();
-    let name = state.configure.name;
+    let artifactName = state.configure.name;
     let namespace = NamespaceStore.getState().selectedNamespace;
-    let defaultSuccessMessage = T.translate('features.Wizard.ArtifactUpload.success');
+    let message = T.translate('features.Wizard.ArtifactUpload.success', {artifactName});
     let subtitle = T.translate('features.Wizard.ArtifactUpload.subtitle');
     let buttonLabel = T.translate('features.Wizard.ArtifactUpload.callToAction');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
     this.setState({
       successInfo: {
-        message: `${defaultSuccessMessage} "${name}".`,
+        message,
         subtitle,
         buttonLabel,
         buttonUrl: window.getHydratorUrl({
@@ -80,7 +80,9 @@ export default class ArtifactUploadWizard extends Component {
           }
         }),
         linkLabel,
-        linkUrl: `/cdap/ns/${namespace}`
+        linkUrl: window.getAbsUIUrl({
+          namespaceId: namespace
+        })
       }
     });
   }
