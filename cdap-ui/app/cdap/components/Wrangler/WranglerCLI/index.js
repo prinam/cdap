@@ -28,23 +28,34 @@ export default class WranglerCLI extends Component {
 
     this.state = {
       directiveInput: '',
-      error: null
+      error: null,
+      autoCompleteOpen: false
     };
 
     this.handleDirectiveChange = this.handleDirectiveChange.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.toggleAutoComplete = this.toggleAutoComplete.bind(this);
   }
 
   handleDirectiveChange(e) {
-    this.setState({directiveInput: e.target.value});
+    this.setState({
+      directiveInput: e.target.value,
+      autoCompleteOpen: true
+    });
   }
 
   handleKeyDown(e) {
     if (e.keyCode !== 13) { return; }
 
+    let split = this.state.directiveInput.split(' ');
+    if (split.length === 1 || split[1].length === 0) { return; }
+
     this.execute();
   }
 
+  toggleAutoComplete() {
+    this.setState({autoCompleteOpen: !this.state.autoCompleteOpen});
+  }
 
   execute() {
     if (this.state.directiveInput.length === 0) { return; }
@@ -97,6 +108,8 @@ export default class WranglerCLI extends Component {
           input={this.state.directiveInput}
           onRowClick={this.handleDirectiveChange}
           inputRef={this.directiveRef}
+          toggle={this.toggleAutoComplete}
+          isOpen={this.state.autoCompleteOpen}
         />
 
         <div className="input-container">
@@ -104,7 +117,8 @@ export default class WranglerCLI extends Component {
           <div className="directive-input">
             <input
               type="text"
-              className="form-control"
+              className="form-control mousetrap"
+              id="directive-input"
               value={this.state.directiveInput}
               onChange={this.handleDirectiveChange}
               onKeyDown={this.handleKeyDown}

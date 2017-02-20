@@ -19,22 +19,20 @@ import MyWranglerApi from 'api/wrangler';
 import Fuse from 'fuse.js';
 import shortid from 'shortid';
 import reverse from 'lodash/reverse';
+import Mousetrap from 'mousetrap';
+import classnames from 'classnames';
 
 require('./AutoComplete.scss');
-
-// const keyMap = {
-//   enter: 13,
-//   esc: 27,
-//   arrowUp: 38,
-//   arrowDown: 40
-// };
 
 export default class WranglerAutoComplete extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      directives: []
+      activeResults: [],
+      input: '',
+      matched: false,
+      activeSelectionIndex: null
     };
   }
 
@@ -43,8 +41,6 @@ export default class WranglerAutoComplete extends Component {
       namespace: 'default'
     })
       .subscribe((res) => {
-        this.setState({directives: res.values});
-
         const fuseOptions = {
           include: ['matches', 'score'],
           caseSensitive: false,
@@ -59,8 +55,33 @@ export default class WranglerAutoComplete extends Component {
           ]
         };
 
-        this.fuse = new Fuse(this.state.directives, fuseOptions);
+        this.fuse = new Fuse(res.values, fuseOptions);
       });
+  }
+
+  componentDidMount() {
+    let directiveInput = document.getElementById('directive-input');
+    this.mousetrap = new Mousetrap(directiveInput);
+
+    this.mousetrap.bind('esc', this.props.toggle);
+    this.mousetrap.bind('up', this.handleUpArrow.bind(this));
+    this.mousetrap.bind('down', this.handleDownArrow.bind(this));
+    this.mousetrap.bind('enter', this.handleEnterKey.bind(this));
+    this.mousetrap.bind('tab', this.handleTabKey.bind(this));
+  }
+
+  componentWillUnmount() {
+    this.mousetrap.unbind('esc');
+    this.mousetrap.unbind('up');
+    this.mousetrap.unbind('down');
+    this.mousetrap.unbind('enter');
+    this.mousetrap.unbind('tab');
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.input !== this.state.input) {
+      this.searchMatch(nextProps.input);
+    }
   }
 
   handleRowClick(row) {
@@ -74,15 +95,58 @@ export default class WranglerAutoComplete extends Component {
     this.props.inputRef.focus();
   }
 
-  searchMatch() {
+  handleUpArrow(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    } else {
+      // internet explorer
+      e.returnValue = false;
+    }
+    if (this.state.activeSelectionIndex === 0) { return; }
+
+    this.setState({activeSelectionIndex: this.state.activeSelectionIndex - 1});
+  }
+
+  handleDownArrow(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    } else {
+      // internet explorer
+      e.returnValue = false;
+    }
+    if (this.state.activeSelectionIndex === this.state.activeResults.length - 1) { return; }
+
+    this.setState({activeSelectionIndex: this.state.activeSelectionIndex + 1});
+  }
+
+  handleEnterKey() {
+    if (this.state.input.length === 0 || this.state.input.split(' ').length !== 1) { return; }
+
+    this.handleRowClick(this.state.activeResults[this.state.activeSelectionIndex]);
+  }
+
+  handleTabKey(e) {
+    if (this.state.input.length === 0 || this.state.input.split(' ').length !== 1) { return; }
+
+    if (e.preventDefault) {
+      e.preventDefault();
+    } else {
+      // internet explorer
+      e.returnValue = false;
+    }
+
+    this.handleEnterKey();
+  }
+
+  searchMatch(query) {
     let results = [];
-    let input = this.props.input;
+    let input = query;
     let spaceIndex = input.indexOf(' ');
     if (spaceIndex !== -1) {
       input = input.slice(0, spaceIndex);
     }
 
-    if (this.fuse && this.props.input.length > 0) {
+    if (this.fuse && input.length > 0) {
       results = this.fuse.search(input)
         .slice(0, 3)
         .filter((row, index) => {
@@ -100,47 +164,47 @@ export default class WranglerAutoComplete extends Component {
         reverse(results);
     }
 
-    return {
-      results,
-      matched: spaceIndex !== -1
-    };
+    this.setState({
+      activeResults: results,
+      input: query,
+      matched: spaceIndex !== -1,
+      activeSelectionIndex: results.length - 1
+    });
   }
 
   render() {
-    let {results, matched} = this.searchMatch();
+    if (!this.props.isOpen || this.state.activeResults.length === 0) { return null; }
 
     return (
       <div className="wrangler-auto-complete-container">
         {
-          results.length === 0 ? null : (
-            results.map((row) => {
-              return (
-                <div
-                  className="result-row"
-                  key={row.uniqueId}
-                  onClick={this.handleRowClick.bind(this, row)}
-                >
-                  <div className="directive-title">
-                    <strong>{row.item.directive}</strong>
-                  </div>
-                  <div className="directive-description">
-                    {row.item.description}
-                  </div>
-
-                  { matched || results.length === 1  ?
-                      (
-                        <div className="directive-usage">
-                          <span>Usage: </span>
-                          <pre>{row.item.usage}</pre>
-                        </div>
-                      )
-                    :
-                      null
-                  }
+          this.state.activeResults.map((row, index) => {
+            return (
+              <div
+                className={classnames('result-row', { active: index === this.state.activeSelectionIndex})}
+                key={row.uniqueId}
+                onClick={this.handleRowClick.bind(this, row)}
+              >
+                <div className="directive-title">
+                  <strong>{row.item.directive}</strong>
                 </div>
-              );
-            })
-          )
+                <div className="directive-description">
+                  {row.item.description}
+                </div>
+
+                { this.state.matchedmatched || this.state.activeResults.length === 1  ?
+                    (
+                      <div className="directive-usage">
+                        <span>Usage: </span>
+                        <pre>{row.item.usage}</pre>
+                      </div>
+                    )
+                  :
+                    null
+                }
+              </div>
+            );
+          })
         }
       </div>
     );
