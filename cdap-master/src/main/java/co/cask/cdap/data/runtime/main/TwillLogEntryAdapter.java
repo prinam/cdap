@@ -39,7 +39,7 @@ public class TwillLogEntryAdapter implements ILoggingEvent {
 
   @Override
   public String getThreadName() {
-    return entry.getThreadName();
+    return entry.getRunnableName() + "-" + entry.getHost() + "-" + entry.getThreadName();
   }
 
   @Override
