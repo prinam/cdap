@@ -16,16 +16,32 @@
 
 import React, { Component } from 'react';
 import Wrangler from 'components/Wrangler';
+import NavigationPrompt from 'react-router/NavigationPrompt';
 
 export default class Experimental extends Component {
   constructor(props) {
     super(props);
 
+    window.onbeforeunload = function() {
+      return "Are you sure you want to leave this page?";
+    };
+  }
+
+  componentWillUnmount() {
+    window.onbeforeunload = null;
   }
 
   render() {
     return (
-      <Wrangler />
+      <div>
+        <Wrangler />
+
+        <NavigationPrompt
+          when={true}
+          message="Are you sure you want to leave this page?"
+        />
+
+      </div>
     );
   }
 }
