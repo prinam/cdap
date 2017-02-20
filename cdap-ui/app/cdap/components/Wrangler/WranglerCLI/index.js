@@ -35,6 +35,7 @@ export default class WranglerCLI extends Component {
     this.handleDirectiveChange = this.handleDirectiveChange.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.toggleAutoComplete = this.toggleAutoComplete.bind(this);
+    this.dismissError = this.dismissError.bind(this);
   }
 
   componentDidMount() {
@@ -101,14 +102,32 @@ export default class WranglerCLI extends Component {
 
   }
 
+  dismissError() {
+    this.setState({error: null});
+  }
+
+  renderError() {
+    if (!this.state.error) { return null; }
+
+    return (
+      <div className="error-bar">
+        <span className="content">
+          {this.state.error}
+        </span>
+
+        <span
+          className="fa fa-times float-xs-right"
+          onClick={this.dismissError}
+        />
+      </div>
+    );
+  }
+
   render() {
     return (
       <div className="wrangler-cli">
-        <div
-          className={classnames('power-mode', { 'error': this.state.error })}
-        >
-          {!this.state.error ? 'Power Mode' : this.state.error}
-        </div>
+
+        {this.renderError()}
 
         <WranglerAutoComplete
           input={this.state.directiveInput}
@@ -116,6 +135,7 @@ export default class WranglerCLI extends Component {
           inputRef={this.directiveRef}
           toggle={this.toggleAutoComplete}
           isOpen={this.state.autoCompleteOpen}
+          hasError={this.state.error}
         />
 
         <div className="input-container">

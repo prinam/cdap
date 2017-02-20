@@ -176,7 +176,9 @@ export default class WranglerAutoComplete extends Component {
     if (!this.props.isOpen || this.state.activeResults.length === 0) { return null; }
 
     return (
-      <div className="wrangler-auto-complete-container">
+      <div className={classnames('wrangler-auto-complete-container', {
+        'has-error': this.props.hasError
+      })}>
         {
           this.state.activeResults.map((row, index) => {
             return (
@@ -217,5 +219,6 @@ WranglerAutoComplete.propTypes = {
   input: PropTypes.string,
   onRowClick: PropTypes.func,
   inputRef: PropTypes.any,
+  hasError: PropTypes.any
 };
 

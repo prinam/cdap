@@ -16,12 +16,13 @@
 
 .wrangler-auto-complete-container {
   position: absolute;
-  bottom: 50px;
+  bottom: 29px;
   left: 0;
   right: 0;
   background-color: black;
-  border: 1px solid #bbbbbb;
   color: #cccccc;
+
+  &.has-error { bottom: 48px; }
 
   .result-row {
     border-bottom: 1px solid #cccccc;

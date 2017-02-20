@@ -18,17 +18,29 @@
   .wrangler-cli {
     position: fixed;
     bottom: 54px;
-    height: 50px;
+    height: 30px;
     width: 75%;
     border-top: 1px solid #cccccc;
 
-    .power-mode {
-      background-color: #999999;
+    .error-bar {
+      background-color: #c0392b;
       color: white;
       padding: 0 10px;
+      position: absolute;
+      width: 100%;
+      bottom: 29px;
 
-      &.error {
-        background-color: #c0392b;
+      .content {
+        width: calc(100% - 30px);
+        display: inline-block;
+        word-break: break-word;
+      }
+
+      .fa.fa-times {
+        cursor: pointer;
+        position: absolute;
+        top: 3px;
+        right: 5px;
       }
     }
 
