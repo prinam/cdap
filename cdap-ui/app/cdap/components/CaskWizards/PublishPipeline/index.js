@@ -79,12 +79,17 @@ export default class PublishPipelineWizard extends Component {
     let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
     let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.customize');
-    let buttonUrl = `/pipelines/ns/${namespace}/studio?draftId=${draftId}`;
     this.setState({
       successInfo: {
         message: `${defaultSuccessMessage} "${name}".`,
         buttonLabel,
-        buttonUrl,
+        buttonUrl: window.getHydratorUrl({
+          stateName: 'hydrator.create',
+          stateParams: {
+            namespace,
+            draftId
+          }
+        }),
         linkLabel,
         linkUrl: `/cdap/ns/${namespace}`
       }

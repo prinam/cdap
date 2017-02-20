@@ -32,11 +32,16 @@ export default class PublishPipelineUsecaseWizard extends Component {
       let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
       let linkLabel = T.translate('features.Wizard.GoToHomePage');
       let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.view');
-      let buttonUrl = `/pipelines/ns/${namespace}/view/${name}`;
       successInfo = {
         message: `${defaultSuccessMessage} "${name}".`,
         buttonLabel,
-        buttonUrl,
+        buttonUrl: window.getHydratorUrl({
+          stateName: 'hydrator.detail',
+          stateParams: {
+            namespace,
+            pipelineId: name
+          }
+        }),
         linkLabel,
         linkUrl: `/cdap/ns/${namespace}`
       };
