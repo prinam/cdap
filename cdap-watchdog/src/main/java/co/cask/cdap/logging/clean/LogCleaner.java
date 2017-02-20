@@ -55,17 +55,16 @@ public class LogCleaner implements Runnable {
     int failureCount = 0;
     for (FileMetadataScanner.DeleteEntry deleteEntry : deleteEntries) {
       try {
-        boolean status = Locations.getLocationFromAbsolutePath(locationFactory,
-                                                               deleteEntry.getLocationIdentifier().getPath()).delete();
+        boolean status = Locations.getLocationFromAbsolutePath(locationFactory, deleteEntry.getLocation()).delete();
         if (!status) {
           failureCount++;
-          LOG.warn("File {} delete failed", deleteEntry.getLocationIdentifier());
+          LOG.warn("File {} delete failed", deleteEntry.getLocation());
         } else {
           deleteCount++;
-          LOG.trace("File {} deleted by log cleanup", deleteEntry.getLocationIdentifier());
+          LOG.trace("File {} deleted by log cleanup", deleteEntry.getLocation());
         }
       } catch (IOException e) {
-        LOG.warn("Exception while deleting file {}", deleteEntry.getLocationIdentifier(), e);
+        LOG.warn("Exception while deleting file {}", deleteEntry.getLocation(), e);
       }
     }
     LOG.info("File cleanup completed, Successful file deletes {} Failed file deletes {}", deleteCount, failureCount);

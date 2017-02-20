@@ -33,7 +33,6 @@ import org.apache.tephra.TransactionFailureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -135,7 +134,7 @@ public class FileMetadataScanner {
                 // expired - can be deleted
                 toDelete.add(
                   new DeleteEntry(rowkey,
-                                  new URI(Bytes.toString(row.get(LoggingStoreTableUtil.META_TABLE_COLUMN_KEY)))));
+                                  Bytes.toString(row.get(LoggingStoreTableUtil.META_TABLE_COLUMN_KEY))));
               } else {
                 // update start-row key based on the logging context and start a new scan.
                 startRowKey = Bytes.add(NEW_ROW_KEY_PREFIX, getNextContextStartKey(rowkey));
@@ -172,19 +171,19 @@ public class FileMetadataScanner {
 
   class DeleteEntry {
     private byte[] rowkey;
-    private URI locationIdentifier;
+    private String location;
 
-    private DeleteEntry(byte[] rowkey, URI locationIdentifier) {
+    private DeleteEntry(byte[] rowkey, String location) {
       this.rowkey = rowkey;
-      this.locationIdentifier = locationIdentifier;
+      this.location = location;
     }
 
     private byte[] getRowKey() {
       return rowkey;
     }
 
-    URI getLocationIdentifier() {
-      return locationIdentifier;
+    String getLocation() {
+      return location;
     }
   }
 

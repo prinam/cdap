@@ -253,12 +253,12 @@ public class FileMetadataScannerTest {
       long eventTimestamp = currentTime - 100;
       LogPathIdentifier logPathIdentifier = new LogPathIdentifier("testNs2", "testApp", "testFlow");
       LocationFactory locationFactory = injector.getInstance(LocationFactory.class);
-      List<Location> expected = new ArrayList<>();
+      List<String> expected = new ArrayList<>();
       for (int i = 0; i < 100; i++) {
         Location location = locationFactory.create("testFlowFile" + i);
         // values : event time is 100ms behind current timestamp
         fileMetaDataWriter.writeMetaData(logPathIdentifier, eventTimestamp + i, currentTime + i, location);
-        expected.add(location);
+        expected.add(location.toURI().getPath());
       }
 
       long tillTime = currentTime + 50;
@@ -268,7 +268,7 @@ public class FileMetadataScannerTest {
       Assert.assertEquals(51, deletedEntries.size());
       int count = 0;
       for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
-        Assert.assertEquals(expected.get(count).toURI().getPath(), deletedEntry.getLocationIdentifier().getPath());
+        Assert.assertEquals(expected.get(count), deletedEntry.getLocation());
         count += 1;
       }
       // now add 10 entries for spark
@@ -279,7 +279,7 @@ public class FileMetadataScannerTest {
         Location location = locationFactory.create("testSparkFile" + i);
         // values : event time is 100ms behind current timestamp
         fileMetaDataWriter.writeMetaData(logPathIdentifier, eventTimestamp + i, currentTime + i, location);
-        expected.add(location);
+        expected.add(location.toURI().getPath());
       }
 
       // lets keep the same till time - this should only delete the spark entries now
@@ -288,7 +288,7 @@ public class FileMetadataScannerTest {
       Assert.assertEquals(10, deletedEntries.size());
       count = 0;
       for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
-        Assert.assertEquals(expected.get(count).toURI().getPath(), deletedEntry.getLocationIdentifier().getPath());
+        Assert.assertEquals(expected.get(count), deletedEntry.getLocation());
         count += 1;
       }
 
@@ -298,23 +298,23 @@ public class FileMetadataScannerTest {
 
       // flow should come up at the beginning in the expected list
       for (int i = 51; i <= 70; i++) {
-        expected.add(locationFactory.create("testFlowFile" + i));
+        expected.add(locationFactory.create("testFlowFile" + i).toURI().getPath());
       }
 
       for (int i = 0; i < 10; i++) {
         Location location = locationFactory.create("testMrFile" + i);
         // values : event time is 100ms behind current timestamp
         fileMetaDataWriter.writeMetaData(logPathIdentifier, eventTimestamp + i, currentTime + i, location);
-        expected.add(location);
+        expected.add(location.toURI().getPath());
       }
 
-      List<Location> nextExpected = new ArrayList<>();
+      List<String> nextExpected = new ArrayList<>();
       logPathIdentifier = new LogPathIdentifier("testNs2", "testApp", "testCustomAction");
       for (int i = 90; i < 100; i++) {
         Location location = locationFactory.create("testActionFile" + i);
         // values : event time is 100ms behind current timestamp
         fileMetaDataWriter.writeMetaData(logPathIdentifier, eventTimestamp + i, currentTime + i, location);
-        nextExpected.add(location);
+        nextExpected.add(location.toURI().getPath());
       }
 
       tillTime = currentTime + 70;
@@ -324,7 +324,7 @@ public class FileMetadataScannerTest {
       Assert.assertEquals(30, deletedEntries.size());
       count = 0;
       for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
-        Assert.assertEquals(expected.get(count).toURI().getPath(), deletedEntry.getLocationIdentifier().getPath());
+        Assert.assertEquals(expected.get(count), deletedEntry.getLocation());
         count += 1;
       }
 
@@ -336,12 +336,12 @@ public class FileMetadataScannerTest {
       deletedEntries = fileMetadataScanner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
       // we should have deleted 90-99 of custom action(10) 71-99 (29) files of flow.
       for (int i = 71; i < 100; i++) {
-        nextExpected.add(locationFactory.create("testFlowFile" + i));
+        nextExpected.add(locationFactory.create("testFlowFile" + i).toURI().getPath());
       }
       Assert.assertEquals(39, deletedEntries.size());
       count = 0;
       for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
-        Assert.assertEquals(nextExpected.get(count).toURI().getPath(), deletedEntry.getLocationIdentifier().getPath());
+        Assert.assertEquals(nextExpected.get(count), deletedEntry.getLocation());
         count += 1;
       }
 

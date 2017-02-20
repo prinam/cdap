@@ -22,7 +22,7 @@ import co.cask.cdap.api.data.DatasetContext;
 import co.cask.cdap.api.dataset.table.Row;
 import co.cask.cdap.api.dataset.table.Scanner;
 import co.cask.cdap.api.dataset.table.Table;
-import co.cask.cdap.common.io.RootLocationFactory;
+import co.cask.cdap.common.io.Locations;
 import co.cask.cdap.data.dataset.SystemDatasetInstantiator;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.MultiThreadDatasetCache;
@@ -40,6 +40,7 @@ import com.google.inject.Inject;
 import org.apache.tephra.RetryStrategies;
 import org.apache.tephra.TransactionFailureException;
 import org.apache.tephra.TransactionSystemClient;
+import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,17 +72,13 @@ public class FileMetaDataReader {
 
   private final DatasetFramework datasetFramework;
   private final Transactional transactional;
-  private final RootLocationFactory rootLocationFactory;
+  private final LocationFactory locationFactory;
   private final Impersonator impersonator;
 
-  // Note: For the old log files reading.
-  // The FileMetaDataReader needs to have a RootLocationFactory because for custom mapped namespaces the
-  // location mapped to a namespace are from root of the filesystem. The FileMetaDataReader stores a location in
-  // bytes to a hbase table and to construct it back to a Location it needs to work with a root based location factory.
   @Inject
   FileMetaDataReader(final DatasetFramework datasetFramework,
                      final TransactionSystemClient transactionSystemClient,
-                     final RootLocationFactory rootLocationFactory, final Impersonator impersonator) {
+                     final LocationFactory locationFactory, final Impersonator impersonator) {
     this.datasetFramework = datasetFramework;
     this.transactional = Transactions.createTransactionalWithRetry(
       Transactions.createTransactional(new MultiThreadDatasetCache(
@@ -89,7 +86,7 @@ public class FileMetaDataReader {
         NamespaceId.SYSTEM, ImmutableMap.<String, String>of(), null, null)),
       RetryStrategies.retryOnConflict(20, 100)
     );
-    this.rootLocationFactory = rootLocationFactory;
+    this.locationFactory = locationFactory;
     this.impersonator = impersonator;
   }
   /**
@@ -137,7 +134,9 @@ public class FileMetaDataReader {
                                     eventTimestamp,
                                     // use 0 as current time as this information is not available
                                     0,
-                                    rootLocationFactory.create(new URI(Bytes.toString(entry.getValue()))),
+                                    // we stored uri in old format
+                                    Locations.getLocationFromAbsolutePath(
+                                      locationFactory, new URI(Bytes.toString(entry.getValue())).getPath()),
                                     logPathIdentifier.getNamespaceId(), impersonator));
         }
       } else {
@@ -165,9 +164,8 @@ public class FileMetaDataReader {
 
     byte[] endRowKey = Bytes.concat(LoggingStoreTableUtil.NEW_FILE_META_ROW_KEY_PREFIX,
                                     logPathIdBytes,
-                                    // end key is exclusive
-                                    // todo check if this is same as endTimestampMs + 1
-                                    Bytes.stopKeyForPrefix(Bytes.toBytes(endTimestampMs)),
+                                    // end row-key is exclusive, so use endTimestamp + 1
+                                    Bytes.toBytes(endTimestampMs + 1),
                                     Bytes.toBytes(0L));
     int prefixLength = LoggingStoreTableUtil.NEW_FILE_META_ROW_KEY_PREFIX.length + logPathIdBytes.length;
 
@@ -179,7 +177,8 @@ public class FileMetaDataReader {
         files.add(new LogLocation(LogLocation.VERSION_1,
                                   Bytes.toLong(row.getRow(), prefixLength, Bytes.SIZEOF_LONG),
                                   Bytes.toLong(row.getRow(), prefixLength + Bytes.SIZEOF_LONG, Bytes.SIZEOF_LONG),
-                                  rootLocationFactory.create(new URI(Bytes.toString(value))),
+                                  // we store path in new format
+                                  Locations.getLocationFromAbsolutePath(locationFactory, (Bytes.toString(value))),
                                   logPathIdentifier.getNamespaceId(), impersonator));
 
       }
