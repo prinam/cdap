@@ -18,9 +18,8 @@
   .wrangler-table {
     padding: 0;
     overflow: auto;
-    height: 100%;
+    height: calc(100% - 50px);
 
-    // .empty { padding-top: 15px; }
     .table {
       margin-bottom: 0;
 

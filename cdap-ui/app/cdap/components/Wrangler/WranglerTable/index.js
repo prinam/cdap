@@ -51,7 +51,7 @@ export default class WranglerTable extends Component {
 
     if (data.length === 0) {
       return (
-        <div className="col-xs-9 wrangler-table empty">
+        <div className="wrangler-table empty">
           <h4 className="text-xs-center">No Data</h4>
           <h5 className="text-xs-center">Please create workspace and upload data</h5>
         </div>
@@ -59,7 +59,7 @@ export default class WranglerTable extends Component {
     }
 
     return (
-      <div className="col-xs-9 wrangler-table">
+      <div className="wrangler-table">
         <table className="table table-bordered table-striped">
           <thead className="thead-inverse">
             {

@@ -57,13 +57,6 @@ export default class Wrangler extends Component {
         cookie.remove('WRANGLER_WORKSPACE');
         this.eventEmitter.emit('WRANGLER_NO_WORKSPACE_ID');
       });
-
-    // MyWranglerApi.getUsage({
-    //   namespace: 'default'
-    // })
-    //   .subscribe((res) => {
-    //     console.log('directives', res);
-    //   });
   }
 
   componentWillUnmount() {
@@ -78,13 +71,13 @@ export default class Wrangler extends Component {
         <WranglerTopPanel />
 
         <div className="row wrangler-body">
-          <WranglerTable />
+          <div className="wrangler-main col-xs-9">
+            <WranglerTable />
+            <WranglerCLI />
+          </div>
 
           <WranglerSidePanel />
         </div>
-
-        <WranglerCLI />
-
       </div>
     );
   }

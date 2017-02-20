@@ -21,6 +21,11 @@
     // 100vh - 50px - 50px - 50px - 54px
     margin-right: 0;
     margin-left: 0;
-    height: calc(100vh - 204px);
+    height: calc(100vh - 154px);
+
+    .wrangler-main {
+      padding: 0;
+      height: 100%;
+    }
   }
 }
