@@ -18,7 +18,6 @@ import React, { Component } from 'react';
 import WranglerStore from 'components/Wrangler/store';
 import WranglerActions from 'components/Wrangler/store/WranglerActions';
 import MyWranglerApi from 'api/wrangler';
-import classnames from 'classnames';
 import WranglerAutoComplete from 'components/Wrangler/AutoComplete';
 require('./WranglerCLI.scss');
 
