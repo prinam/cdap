@@ -16,12 +16,15 @@
 
 package co.cask.cdap.metrics.store;
 
+import co.cask.cdap.api.Predicate;
 import co.cask.cdap.api.dataset.DatasetManagementException;
 import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.api.dataset.table.TableProperties;
-import co.cask.cdap.common.ServiceUnavailableException;
+import co.cask.cdap.api.retry.RetryableException;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
+import co.cask.cdap.common.service.Retries;
+import co.cask.cdap.common.service.RetryStrategies;
 import co.cask.cdap.data2.datafabric.dataset.DatasetsUtil;
 import co.cask.cdap.data2.dataset2.DatasetFramework;
 import co.cask.cdap.data2.dataset2.lib.table.MetricsTable;
@@ -53,6 +56,12 @@ public class DefaultMetricDatasetFactory implements MetricDatasetFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(DefaultMetricDatasetFactory.class);
   private static final Gson GSON = new Gson();
+  private static final Predicate<Throwable> RETRYABLE_PREDICATE = new Predicate<Throwable>() {
+    @Override
+    public boolean apply(Throwable throwable) {
+      return throwable instanceof RetryableException || throwable instanceof DatasetManagementException;
+    }
+  };
 
   private final CConfiguration cConf;
   private final Supplier<EntityTable> entityTable;
@@ -114,30 +123,23 @@ public class DefaultMetricDatasetFactory implements MetricDatasetFactory {
     }
   }
 
-  private MetricsTable getOrCreateMetricsTable(String tableName, DatasetProperties props) {
-    MetricsTable table = null;
+  private MetricsTable getOrCreateMetricsTable(String tableName, final DatasetProperties props) {
     // metrics tables are in the system namespace
-    DatasetId metricsDatasetInstanceId = NamespaceId.SYSTEM.dataset(tableName);
-    while (table == null) {
-      try {
-        table = DatasetsUtil.getOrCreateDataset(dsFramework, metricsDatasetInstanceId,
-                                                MetricsTable.class.getName(), props, null, null);
-      } catch (DatasetManagementException | ServiceUnavailableException e) {
-        // dataset service may be not up yet
-        // todo: seems like this logic applies everywhere, so should we move it to DatasetsUtil?
-        LOG.warn("Cannot access or create table {}, will retry in 1 sec.", tableName);
-        try {
-          TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException ie) {
-          Thread.currentThread().interrupt();
-          break;
+    final DatasetId metricsDatasetInstanceId = NamespaceId.SYSTEM.dataset(tableName);
+    MetricsTable table;
+    try {
+      table = Retries.callWithRetries(new Retries.Callable<MetricsTable, Exception>() {
+        @Override
+        public MetricsTable call() throws Exception {
+          return DatasetsUtil.getOrCreateDataset(dsFramework, metricsDatasetInstanceId, MetricsTable.class.getName(),
+                                                 props, null, null);
         }
-      } catch (IOException e) {
-        LOG.error("Exception while creating table {}.", tableName, e);
-        throw Throwables.propagate(e);
-      }
+      }, RetryStrategies.fixDelay(1, TimeUnit.SECONDS), RETRYABLE_PREDICATE);
+    } catch (Exception e) {
+      // Since we are retrying with fixed delay we should not expect DatasetManagementException or
+      // ServiceUnavailableException. Any other exceptions will be thrown to the caller. No need to log here.
+      throw Throwables.propagate(e);
     }
-
     return table;
   }
 
