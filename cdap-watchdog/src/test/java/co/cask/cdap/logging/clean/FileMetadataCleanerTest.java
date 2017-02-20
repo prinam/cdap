@@ -52,6 +52,7 @@ import co.cask.cdap.logging.meta.FileMetaDataReader;
 import co.cask.cdap.logging.meta.FileMetaDataWriter;
 import co.cask.cdap.logging.meta.LoggingStoreTableUtil;
 import co.cask.cdap.logging.write.FileMetaDataManager;
+import co.cask.cdap.logging.write.LogLocation;
 import co.cask.cdap.proto.ProgramType;
 import co.cask.cdap.proto.id.NamespaceId;
 import co.cask.cdap.security.auth.context.AuthenticationContextModules;
@@ -364,6 +365,74 @@ public class FileMetadataCleanerTest {
       tillTime = currentTime + 1000;
       deletedEntries = fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
       Assert.assertEquals(0, deletedEntries.size());
+    } finally {
+      // cleanup meta
+      cleanupMetadata(transactional, datasetManager);
+    }
+  }
+
+
+  @Test
+  public void testFileMetadataWithCommonContextPrefix() throws Exception {
+    DatasetFramework datasetFramework = injector.getInstance(DatasetFramework.class);
+    DatasetManager datasetManager = new DefaultDatasetManager(datasetFramework, NamespaceId.SYSTEM,
+                                                              co.cask.cdap.common.service.RetryStrategies.noRetry());
+    Transactional transactional = Transactions.createTransactionalWithRetry(
+      Transactions.createTransactional(new MultiThreadDatasetCache(
+        new SystemDatasetInstantiator(datasetFramework), injector.getInstance(TransactionSystemClient.class),
+        NamespaceId.SYSTEM, ImmutableMap.<String, String>of(), null, null)),
+      RetryStrategies.retryOnConflict(20, 100)
+    );
+
+    FileMetaDataWriter fileMetaDataWriter = new FileMetaDataWriter(datasetManager, transactional);
+    FileMetaDataReader fileMetadataReader = injector.getInstance(FileMetaDataReader.class);
+    FileMetadataCleaner fileMetadataCleaner = new FileMetadataCleaner(datasetManager, transactional);
+    try {
+      List<LogPathIdentifier> logPathIdentifiers = new ArrayList<>();
+      // we write entries where program id is of format testFlow{1..20},
+      // this should be able to scan and delete common prefix programs like testFlow1, testFlow10 during clenaup.
+      for (int i = 1; i <= 20; i++) {
+        logPathIdentifiers.add(new LogPathIdentifier(NamespaceId.DEFAULT.getNamespace(),
+                                                     "testApp", String.format("testFlow%s", i)));
+      }
+
+      LocationFactory locationFactory = injector.getInstance(LocationFactory.class);
+      Location location = locationFactory.create(TMP_FOLDER.newFolder().getPath()).append("/logs");
+      long currentTime = System.currentTimeMillis();
+      long newCurrentTime = currentTime + 100;
+
+      for (int i = 1; i <= 20; i++) {
+        LogPathIdentifier identifier = logPathIdentifiers.get(i - 1);
+        for (int j = 0; j < 10; j++) {
+          fileMetaDataWriter.writeMetaData(identifier, newCurrentTime + j, newCurrentTime + j,
+                                           location.append("testFileNew" + Integer.toString(j)));
+        }
+      }
+
+      List<LogLocation> locations;
+      for (int i = 1; i <= 20; i++) {
+        locations = fileMetadataReader.listFiles(logPathIdentifiers.get(i - 1),
+                                                 newCurrentTime, newCurrentTime + 10);
+        // should include files from currentTime (0..9)
+        Assert.assertEquals(10, locations.size());
+      }
+
+      long tillTime = newCurrentTime + 4;
+      List<FileMetadataCleaner.DeleteEntry> deleteEntries =
+        fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
+      // 20 context, 5 entries each
+      Assert.assertEquals(100, deleteEntries.size());
+      for (int i = 1; i <= 20; i++) {
+        locations = fileMetadataReader.listFiles(logPathIdentifiers.get(i - 1),
+                                                 newCurrentTime, newCurrentTime + 10);
+        // should include files from time (5..9)
+        Assert.assertEquals(5, locations.size());
+        int startIndex = 5;
+        for (LogLocation logLocation : locations) {
+          Assert.assertEquals(String.format("testFileNew%s", startIndex), logLocation.getLocation().getName());
+          startIndex++;
+        }
+      }
     } finally {
       // cleanup meta
       cleanupMetadata(transactional, datasetManager);

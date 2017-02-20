@@ -141,7 +141,7 @@ public class FileMetaDataReader {
         }
       } else {
         LOG.warn("For row-key {}, got column entry with unexpected key length {}",
-                 logPathIdentifier.getRowKey(), entry.getKey().length);
+                 logPathIdentifier.getOldRowkey(), entry.getKey().length);
       }
     }
     return files;
@@ -156,7 +156,7 @@ public class FileMetaDataReader {
     // add these files to the list
     List<LogLocation> files = new ArrayList<>();
 
-    byte[] logPathIdBytes = Bytes.toBytes(logPathIdentifier.getRowKey());
+    byte[] logPathIdBytes = Bytes.toBytes(logPathIdentifier.getNewRowkey());
     byte[] startRowKey = Bytes.concat(LoggingStoreTableUtil.NEW_FILE_META_ROW_KEY_PREFIX,
                                       logPathIdBytes,
                                       Bytes.toBytes(0L),
@@ -187,7 +187,7 @@ public class FileMetaDataReader {
   }
 
   private byte[] getOldRowKey(LogPathIdentifier logPathIdentifier) {
-    return Bytes.add(LoggingStoreTableUtil.OLD_FILE_META_ROW_KEY_PREFIX, logPathIdentifier.getRowKey().getBytes());
+    return Bytes.add(LoggingStoreTableUtil.OLD_FILE_META_ROW_KEY_PREFIX, logPathIdentifier.getOldRowkey().getBytes());
   }
 
   @VisibleForTesting

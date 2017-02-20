@@ -57,7 +57,7 @@ public class FileMetaDataWriter {
                             final long currentTimeMs,
                             final Location location) throws Exception {
     LOG.debug("Writing meta data for logging context {} with startTimeMs {} sequence Id {} and location {}",
-              identifier.getRowKey(), eventTimeMs, currentTimeMs, location);
+              identifier.getNewRowkey(), eventTimeMs, currentTimeMs, location);
 
     transactional.execute(new TxRunnable() {
       @Override
@@ -71,7 +71,7 @@ public class FileMetaDataWriter {
 
   private byte[] getRowKey(LogPathIdentifier identifier, long eventTime, long currentTime) {
     return Bytes.concat(LoggingStoreTableUtil.NEW_FILE_META_ROW_KEY_PREFIX,
-                        identifier.getRowKey().getBytes(StandardCharsets.UTF_8),
+                        identifier.getNewRowkey().getBytes(StandardCharsets.UTF_8),
                         Bytes.toBytes(eventTime),
                         Bytes.toBytes(currentTime));
   }
