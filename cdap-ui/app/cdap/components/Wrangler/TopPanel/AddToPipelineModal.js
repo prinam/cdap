@@ -28,7 +28,8 @@ export default class AddToHydratorModal extends Component {
     this.state = {
       loading: true,
       batchUrl: null,
-      realtimeUrl: null
+      realtimeUrl: null,
+      error: null
     };
   }
 
@@ -114,6 +115,10 @@ export default class AddToHydratorModal extends Component {
 
       }, (err) => {
         console.log('Failed to fetch schema', err);
+        this.setState({
+          error: err.message,
+          loading: false
+        });
       });
   }
 
@@ -125,6 +130,14 @@ export default class AddToHydratorModal extends Component {
         <div>
           <h4 className="text-xs-center">
             <span className="fa fa-spin fa-spinner" />
+          </h4>
+        </div>
+      );
+    } else if (this.state.error) {
+      content = (
+        <div>
+          <h4 className="text-danger text-xs-center">
+            {this.state.error}
           </h4>
         </div>
       );
