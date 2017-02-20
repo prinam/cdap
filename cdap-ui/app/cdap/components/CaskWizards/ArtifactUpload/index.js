@@ -41,7 +41,7 @@ export default class ArtifactUploadWizard extends Component {
   }
 
   onSubmit() {
-    if (!this.props.isMarket) {
+    if (!this.props.buildSuccessInfo) {
       this.buildSuccessInfo();
     }
     return ArtifactUploadActionCreator.uploadArtifact();
@@ -55,9 +55,10 @@ export default class ArtifactUploadWizard extends Component {
       showWizard: !this.state.showWizard
     });
   }
+  // TODO: shouldn't do this, replace in 4.2
   getChildContext() {
     return {
-      isMarket: this.props.isMarket
+      isMarket: this.props.buildSuccessInfo
     };
   }
   buildSuccessInfo() {
@@ -100,7 +101,7 @@ export default class ArtifactUploadWizard extends Component {
         className="artifact-upload-wizard"
       >
         <Wizard
-          wizardConfig={this.props.isMarket ? MarketArtifactUploadWizardConfig : ArtifactUploadWizardConfig}
+          wizardConfig={this.props.buildSuccessInfo ? MarketArtifactUploadWizardConfig : ArtifactUploadWizardConfig}
           wizardType="ArtifactUpload"
           store={ArtifactUploadStore}
           onSubmit={this.onSubmit.bind(this)}
@@ -118,8 +119,7 @@ ArtifactUploadWizard.defaultProps = {
       arguments: {}
     },
     package: {},
-  },
-  isMarket: false
+  }
 };
 ArtifactUploadWizard.childContextTypes = {
   isMarket: PropTypes.bool
@@ -128,5 +128,5 @@ ArtifactUploadWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  isMarket: PropTypes.bool
+  buildSuccessInfo: PropTypes.func
 };

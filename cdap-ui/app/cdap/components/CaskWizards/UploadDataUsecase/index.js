@@ -23,7 +23,7 @@ export default function UploadDataUsecaseWizard({input, onClose, isOpen}) {
       isOpen={isOpen}
       input={input}
       onClose={onClose}
-      isUsecase={true}
+      buildSuccessInfo={() => {}}
     />
   );
 }

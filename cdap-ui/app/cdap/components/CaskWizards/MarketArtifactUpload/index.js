@@ -32,9 +32,9 @@ export default function MarketArtifactUploadWizard({input, onClose, isOpen}) {
     filename: config.value
   };
 
-  let isMarket = true;
-  if (this.props.input.isLastStepInMarket) {
-    isMarket = false;
+  let buildSuccessInfo = () => {};
+  if (input.isLastStepInMarket) {
+    buildSuccessInfo = null;
   }
 
   MyMarketApi.getSampleData(params)
@@ -62,7 +62,7 @@ export default function MarketArtifactUploadWizard({input, onClose, isOpen}) {
       isOpen={isOpen}
       input={input}
       onClose={onClose}
-      isMarket={isMarket}
+      buildSuccessInfo={buildSuccessInfo}
     />
   );
 }

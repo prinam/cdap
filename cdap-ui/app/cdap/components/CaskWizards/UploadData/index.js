@@ -50,8 +50,7 @@ export default class UploadDataWizard extends Component {
     let fileContents = state.viewdata.data;
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let authToken = cookie.load('CDAP_Auth_Token');
-    // currently no usecases so far require a CTA for this step
-    if (!this.props.isUsecase) {
+    if (!this.props.buildSuccessInfo) {
       this.buildSuccessInfo(packagename, streamId, currentNamespace);
     }
     let streamUrl = window.getAbsUIUrl({
@@ -160,5 +159,5 @@ UploadDataWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  isUsecase: PropTypes.bool
+  buildSuccessInfo: PropTypes.func
 };

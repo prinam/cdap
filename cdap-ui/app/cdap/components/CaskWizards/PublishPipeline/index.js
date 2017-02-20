@@ -117,27 +117,9 @@ export default class PublishPipelineWizard extends Component {
     };
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let draftId;
-    // this is the case when this is used in an usecase, so
-    // PublishPipelineUsecase passes the CTA info to this component
-    if (this.props.buildSuccessInfo) {
-      return MyPipelineApi
-        .publish({
-          namespace: currentNamespace,
-          appId: name
-          }, {
-            artifact,
-            config: pipelineConfig
-          }
-        )
-        .map((res) => {
-          let successInfo = this.props.buildSuccessInfo(name, currentNamespace);
-            this.setState({
-              successInfo
-            });
-          this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
-          return res;
-        });
-    } else {
+    console.log(this.props.input.action.type);
+    console.log(this.props.input);
+    if (this.props.input.action.type === 'create_pipeline_draft') {
       return MyUserStoreApi
         .get()
         .flatMap((res) => {
@@ -156,7 +138,27 @@ export default class PublishPipelineWizard extends Component {
           return res;
         });
     }
-
+    // this is the case when this is used in an usecase, so
+    // PublishPipelineUsecase passes the CTA info to this component
+    if (this.props.input.action.type === 'create_pipeline' && this.props.buildSuccessInfo) {
+      return MyPipelineApi
+        .publish({
+          namespace: currentNamespace,
+          appId: name
+          }, {
+            artifact,
+            config: pipelineConfig
+          }
+        )
+        .map((res) => {
+          let successInfo = this.props.buildSuccessInfo(name, currentNamespace);
+          this.setState({
+            successInfo
+          });
+          this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
+          return res;
+        });
+    }
   }
   render() {
     let input = this.props.input || {};
