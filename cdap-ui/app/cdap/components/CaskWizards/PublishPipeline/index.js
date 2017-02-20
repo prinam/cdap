@@ -117,8 +117,6 @@ export default class PublishPipelineWizard extends Component {
     };
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let draftId;
-    console.log(this.props.input.action.type);
-    console.log(this.props.input);
     if (this.props.input.action.type === 'create_pipeline_draft') {
       return MyUserStoreApi
         .get()
