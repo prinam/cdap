@@ -874,6 +874,24 @@ public class MetadataDataset extends AbstractDataset {
   }
 
   /**
+   * Removes all metadata which is {@code null}.
+   *
+   * @param targetId the {@link NamespacedEntityId} for which to remove the {@code null} metadata
+   */
+  public void removeNullOrEmptyMetadata(final NamespacedEntityId targetId) {
+    removeMetadata(targetId, new Predicate<String>() {
+      @Override
+      public boolean apply(@Nullable String input) {
+        if (input == null) {
+          return true;
+        }
+        MetadataEntry metadata = getMetadata(targetId, input);
+        return metadata == null || Strings.isNullOrEmpty(metadata.getValue());
+      }
+    });
+  }
+
+  /**
    * Returns all the {@link Indexer indexers} that apply to a specified metadata key.
    *
    * @param key the key for which {@link Indexer indexers} are required
