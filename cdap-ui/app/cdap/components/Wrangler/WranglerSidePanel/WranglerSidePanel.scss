@@ -119,6 +119,26 @@ $tab-header-height: 37px;
         .expanded-row {
           background-color: #dedede;
           padding: 10px;
+          border-bottom: 1px solid #999999;
+
+          .quality-bar {
+            border: 1px solid #999999;
+            border-radius: 4px;
+            height: 20px;
+            overflow: hidden;
+            margin-top: -10px;
+            margin-bottom: 10px;
+
+            span {
+              height: 20px;
+              display: inline-block;
+
+              &.filled { background-color: #2ecc71; }
+              &.empty { background-color: #e74c3c; }
+              &.null-cell { background-color: #95a5a6; }
+            }
+
+          }
         }
       }
     }

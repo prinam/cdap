@@ -32,12 +32,71 @@ export default class ColumnsTabRow extends Component {
     this.setState({expanded: !this.state.expanded});
   }
 
+  renderTypesTable() {
+    let types = this.props.rowInfo.types;
+    if (!types) { return; }
+
+    let headers = Object.keys(types);
+
+    return (
+      <div className="types-table-container">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>%</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {
+              headers.map((head) => {
+                return (
+                  <tr key={head}>
+                    <td>{head}</td>
+                    <td>{types[head]}</td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   renderExpanded() {
     if (!this.state.expanded) { return null; }
 
+    let generalInfo = this.props.rowInfo.general;
+
+    let nonNull = generalInfo['non-null'] || 0,
+        nullCell = generalInfo['null'] || 0,
+        empty = generalInfo['empty'] || 0;
+
+    let filled = nonNull - empty;
+
     return (
       <div className="expanded-row">
-        <pre>{JSON.stringify(this.props.rowInfo, null, 4)}</pre>
+        <div className="quality-bar">
+          <span
+            className="filled"
+            style={{width: `${filled}%`}}
+          />
+
+          <span
+            className="empty"
+            style={{width: `${empty}%`}}
+          />
+
+          <span
+            className="null-cell"
+            style={{width: `${nullCell}%`}}
+          />
+        </div>
+
+        {this.renderTypesTable()}
+
       </div>
     );
   }
