@@ -64,8 +64,8 @@ public class CDAPLogAppender extends AppenderBase<ILoggingEvent> implements Flus
   private long maxFileLifetimeMs;
   private long maxFileSizeInBytes;
   private ScheduledExecutorService scheduledExecutorService;
-  private long logCleanupIntervalMins;
-  private long fileRetentionDurationDays;
+  private int logCleanupIntervalMins;
+  private int fileRetentionDurationDays;
   private int fileCleanupTransactionTimeout;
 
   public CDAPLogAppender() {
@@ -111,14 +111,14 @@ public class CDAPLogAppender extends AppenderBase<ILoggingEvent> implements Flus
    * Sets the file retention duration for the file,
    * after this duration the file gets cleaned up by log clean up thread.
    */
-  public void setFileRetentionDurationDays(long fileRetentionDurationDays) {
+  public void setFileRetentionDurationDays(int fileRetentionDurationDays) {
     this.fileRetentionDurationDays = fileRetentionDurationDays;
   }
 
   /**
    * Sets the log cleanup interval
    */
-  public void setLogCleanupIntervalMins(long logCleanupIntervalMins) {
+  public void setLogCleanupIntervalMins(int logCleanupIntervalMins) {
     this.logCleanupIntervalMins = logCleanupIntervalMins;
   }
 

@@ -155,7 +155,7 @@ public class FileMetadataCleaner {
       // though the first call will delete all old meta data.
       scanAndDeleteOldMetaData(transactionTimeout, cutOffTransactionTime);
 
-      // delete meta data first
+      // delete meta data entries in toDelete and get the file location list
       return deleteNewMetadataEntries(toDelete, transactionTimeout, cutOffTransactionTime);
     }
     // toDelete is empty, safe to return that
@@ -216,10 +216,18 @@ public class FileMetadataCleaner {
       this.location = location;
     }
 
+    /**
+     * rowkey of metadata entry to be deleted
+     * @return
+     */
     private byte[] getRowKey() {
       return rowkey;
     }
 
+    /**
+     * location to be deleted
+     * @return
+     */
     String getLocation() {
       return location;
     }

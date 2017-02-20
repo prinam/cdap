@@ -123,7 +123,7 @@ public class FileMetaDataReader {
   private List<LogLocation> getFilesInOldFormat(
     Table metaTable, LogPathIdentifier logPathIdentifier, long endTimestampMs) throws URISyntaxException {
     List<LogLocation> files = new ArrayList<>();
-    final Row cols = metaTable.get(getRowKey(logPathIdentifier));
+    final Row cols = metaTable.get(getOldRowKey(logPathIdentifier));
     for (Map.Entry<byte[], byte[]> entry : cols.getColumns().entrySet()) {
       // old rowkey format length is 8 bytes (just the event timestamp is the column key)
       if (entry.getKey().length == 8) {
@@ -186,7 +186,7 @@ public class FileMetaDataReader {
     return files;
   }
 
-  private byte[] getRowKey(LogPathIdentifier logPathIdentifier) {
+  private byte[] getOldRowKey(LogPathIdentifier logPathIdentifier) {
     return Bytes.add(LoggingStoreTableUtil.OLD_FILE_META_ROW_KEY_PREFIX, logPathIdentifier.getRowKey().getBytes());
   }
 
