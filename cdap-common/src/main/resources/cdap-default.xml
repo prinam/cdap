@@ -1215,14 +1215,6 @@
   </property>
 
   <property>
-    <name>log.retention.duration.days</name>
-    <value>7</value>
-    <description>
-      Duration (the time-to-live) in days of saved log files in HDFS retention
-    </description>
-  </property>
-
-  <property>
     <name>log.saver.max.instances</name>
     <value>${master.service.max.instances}</value>
     <description>
