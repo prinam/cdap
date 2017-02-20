@@ -93,7 +93,11 @@ export default class WranglerCLI extends Component {
           {!this.state.error ? 'Power Mode' : this.state.error}
         </div>
 
-        <WranglerAutoComplete />
+        <WranglerAutoComplete
+          input={this.state.directiveInput}
+          onRowClick={this.handleDirectiveChange}
+          inputRef={this.directiveRef}
+        />
 
         <div className="input-container">
           <strong>$</strong>
@@ -104,11 +108,9 @@ export default class WranglerCLI extends Component {
               value={this.state.directiveInput}
               onChange={this.handleDirectiveChange}
               onKeyDown={this.handleKeyDown}
+              ref={(ref) => this.directiveRef = ref}
             />
           </div>
-
-          <strong className="float-xs-right experimental-label">EXPERIMENTAL FEATURE</strong>
-
         </div>
       </div>
     );

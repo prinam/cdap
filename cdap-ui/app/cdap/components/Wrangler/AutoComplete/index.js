@@ -16,6 +16,18 @@
 
 import React, { Component, PropTypes } from 'react';
 import MyWranglerApi from 'api/wrangler';
+import Fuse from 'fuse.js';
+import shortid from 'shortid';
+import reverse from 'lodash/reverse';
+
+require('./AutoComplete.scss');
+
+// const keyMap = {
+//   enter: 13,
+//   esc: 27,
+//   arrowUp: 38,
+//   arrowDown: 40
+// };
 
 export default class WranglerAutoComplete extends Component {
   constructor(props) {
@@ -31,15 +43,105 @@ export default class WranglerAutoComplete extends Component {
       namespace: 'default'
     })
       .subscribe((res) => {
-        console.log('directives', res);
-        this.setState({directives: res.value});
+        this.setState({directives: res.values});
+
+        const fuseOptions = {
+          include: ['matches', 'score'],
+          caseSensitive: false,
+          threshold: 0,
+          shouldSort: true,
+          location: 0,
+          distance: 100,
+          minMatchCharLength: 1,
+          maxPatternLength: 32,
+          keys: [
+            "directive"
+          ]
+        };
+
+        this.fuse = new Fuse(this.state.directives, fuseOptions);
       });
   }
 
+  handleRowClick(row) {
+    if (typeof this.props.onRowClick !== 'function') { return; }
+
+    let eventObject = {
+      target: { value: `${row.item.directive} `}
+    };
+
+    this.props.onRowClick(eventObject);
+    this.props.inputRef.focus();
+  }
+
+  searchMatch() {
+    let results = [];
+    let input = this.props.input;
+    let spaceIndex = input.indexOf(' ');
+    if (spaceIndex !== -1) {
+      input = input.slice(0, spaceIndex);
+    }
+
+    if (this.fuse && this.props.input.length > 0) {
+      results = this.fuse.search(input)
+        .slice(0, 3)
+        .filter((row, index) => {
+          if (spaceIndex === -1) {
+            return true;
+          }
+
+          return row.score === 0 && index === 0;
+        })
+        .map((row) => {
+          row.uniqueId = shortid.generate();
+          return row;
+        });
+
+        reverse(results);
+    }
+
+    return {
+      results,
+      matched: spaceIndex !== -1
+    };
+  }
+
   render() {
+    let {results, matched} = this.searchMatch();
+
     return (
       <div className="wrangler-auto-complete-container">
+        {
+          results.length === 0 ? null : (
+            results.map((row) => {
+              return (
+                <div
+                  className="result-row"
+                  key={row.uniqueId}
+                  onClick={this.handleRowClick.bind(this, row)}
+                >
+                  <div className="directive-title">
+                    <strong>{row.item.directive}</strong>
+                  </div>
+                  <div className="directive-description">
+                    {row.item.description}
+                  </div>
 
+                  { matched || results.length === 1  ?
+                      (
+                        <div className="directive-usage">
+                          <span>Usage: </span>
+                          <pre>{row.item.usage}</pre>
+                        </div>
+                      )
+                    :
+                      null
+                  }
+                </div>
+              );
+            })
+          )
+        }
       </div>
     );
   }
@@ -47,6 +149,9 @@ export default class WranglerAutoComplete extends Component {
 
 WranglerAutoComplete.propTypes = {
   isOpen: PropTypes.bool,
-  toggle: PropTypes.func
+  toggle: PropTypes.func,
+  input: PropTypes.string,
+  onRowClick: PropTypes.func,
+  inputRef: PropTypes.any,
 };
 
