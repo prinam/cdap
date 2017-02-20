@@ -27,7 +27,6 @@ import co.cask.cdap.app.runtime.ProgramController;
 import co.cask.cdap.app.runtime.ProgramOptions;
 import co.cask.cdap.app.runtime.ProgramRunner;
 import co.cask.cdap.common.conf.CConfiguration;
-import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.io.Locations;
 import co.cask.cdap.common.lang.jar.BundleJarUtil;
 import co.cask.cdap.data.stream.StreamCoordinatorClient;
@@ -65,7 +64,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.tephra.TxConstants;
 import org.apache.twill.api.Command;
@@ -157,20 +155,12 @@ public abstract class AbstractProgramTwillRunnable<T extends ProgramRunner> impl
       CommandLine cmdLine = parseArgs(context.getApplicationArguments());
 
       // Loads configurations
-      hConf = HBaseConfiguration.create();
-      String numClientRetries = hConf.get(Constants.HBase.CLIENT_RETRIES);
-      String rpcTimeOut = hConf.get(Constants.HBase.RPC_TIMEOUT);
+      hConf = new Configuration();
       hConf.clear();
       hConf.addResource(new File(cmdLine.getOptionValue(RunnableOptions.HADOOP_CONF_FILE)).toURI().toURL());
       // don't have tephra retry in order to give CDAP more control over when to retry and how.
       hConf.set(TxConstants.Service.CFG_DATA_TX_CLIENT_RETRY_STRATEGY, "n-times");
       hConf.setInt(TxConstants.Service.CFG_DATA_TX_CLIENT_ATTEMPTS, 0);
-
-      // Programs should run with the client retries and rpc timeout values from hbase configurations
-      // and not from the values specified in cdap-default.xml (master.hbase.client.retries.number
-      // and master.hbase.rpc.timeout)
-      hConf.set(Constants.HBase.CLIENT_RETRIES, numClientRetries);
-      hConf.set(Constants.HBase.RPC_TIMEOUT, rpcTimeOut);
 
       UserGroupInformation.setConfiguration(hConf);
 

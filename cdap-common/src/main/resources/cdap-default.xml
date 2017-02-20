@@ -1320,7 +1320,7 @@
   </property>
 
   <property>
-    <name>master.hbase.client.retries.number</name>
+    <name>hbase.client.retries.number</name>
     <value>2</value>
     <description>
       Maximum number of retries while performing HBase operations from master services
@@ -1328,7 +1328,7 @@
   </property>
 
   <property>
-    <name>master.hbase.rpc.timeout</name>
+    <name>hbase.rpc.timeout</name>
     <value>15000</value>
     <description>
       RPC timeout from HBase operations performed from master services

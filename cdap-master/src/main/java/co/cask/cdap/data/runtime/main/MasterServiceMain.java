@@ -205,8 +205,6 @@ public class MasterServiceMain extends DaemonMain {
     login(cConf);
 
     Configuration hConf = HBaseConfiguration.create();
-    hConf.set(Constants.HBase.CLIENT_RETRIES, cConf.get(Constants.HBase.MASTER_CLIENT_RETRIES));
-    hConf.set(Constants.HBase.RPC_TIMEOUT, cConf.get(Constants.HBase.MASTER_RPC_TIMEOUT));
 
     Injector injector = createProcessInjector(cConf, hConf);
     this.cConf = injector.getInstance(CConfiguration.class);
