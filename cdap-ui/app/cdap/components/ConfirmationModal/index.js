@@ -31,6 +31,11 @@ export default class ConfirmationModal extends Component {
     Mousetrap.bind('enter', this.props.confirmFn);
   }
 
+  shouldComponentUpdate(nextProps) {
+    // the modal shouldn't change when the status of a program changes, if it's already open
+    return !(this.props.isOpen === nextProps.isOpen && nextProps.status !== 'loading');
+  }
+
   componentWillUnmount() {
     Mousetrap.unbind('enter');
   }
