@@ -30,14 +30,14 @@ import java.util.List;
 public class LogCleaner implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
 
-  private final FileMetadataScanner fileMetadataScanner;
+  private final FileMetadataCleaner fileMetadataCleaner;
   private final LocationFactory locationFactory;
   private final long retentionDurationMs;
   private final int transactionTimeout;
 
-  public LogCleaner(FileMetadataScanner fileMetadataScanner, LocationFactory locationFactory,
+  public LogCleaner(FileMetadataCleaner fileMetadataCleaner, LocationFactory locationFactory,
                     long retentionDurationMs, int fileCleanupTransactionTimeout) {
-    this.fileMetadataScanner = fileMetadataScanner;
+    this.fileMetadataCleaner = fileMetadataCleaner;
     this.locationFactory = locationFactory;
     this.retentionDurationMs = retentionDurationMs;
     this.transactionTimeout = fileCleanupTransactionTimeout;
@@ -49,11 +49,11 @@ public class LogCleaner implements Runnable {
     long startTime = System.currentTimeMillis();
     LOG.info("Starting log cleanup at {}", startTime);
     long tillTime = startTime - retentionDurationMs;
-    List<FileMetadataScanner.DeleteEntry> deleteEntries =
-      fileMetadataScanner.scanAndGetFilesToDelete(tillTime, transactionTimeout);
+    List<FileMetadataCleaner.DeleteEntry> deleteEntries =
+      fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, transactionTimeout);
     int deleteCount = 0;
     int failureCount = 0;
-    for (FileMetadataScanner.DeleteEntry deleteEntry : deleteEntries) {
+    for (FileMetadataCleaner.DeleteEntry deleteEntry : deleteEntries) {
       try {
         boolean status = Locations.getLocationFromAbsolutePath(locationFactory, deleteEntry.getLocation()).delete();
         if (!status) {

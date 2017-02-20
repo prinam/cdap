@@ -24,7 +24,7 @@ import ch.qos.logback.core.status.WarnStatus;
 import co.cask.cdap.api.logging.AppenderContext;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.io.Syncable;
-import co.cask.cdap.logging.clean.FileMetadataScanner;
+import co.cask.cdap.logging.clean.FileMetadataCleaner;
 import co.cask.cdap.logging.clean.LogCleaner;
 import co.cask.cdap.logging.meta.FileMetaDataWriter;
 import co.cask.cdap.logging.serialize.LogSchema;
@@ -68,9 +68,6 @@ public class CDAPLogAppender extends AppenderBase<ILoggingEvent> implements Flus
   private long fileRetentionDurationDays;
   private int fileCleanupTransactionTimeout;
 
-  /**
-   * TODO: start a separate cleanup thread to remove files that has passed the TTL
-   */
   public CDAPLogAppender() {
     setName(getClass().getName());
   }
@@ -154,8 +151,8 @@ public class CDAPLogAppender extends AppenderBase<ILoggingEvent> implements Flus
       if (context.getInstanceId() == 0) {
         scheduledExecutorService =
           Executors.newSingleThreadScheduledExecutor(Threads.createDaemonThreadFactory("log-clean-up"));
-        FileMetadataScanner fileMetadataScanner = new FileMetadataScanner(context.getDatasetManager(), context);
-        LogCleaner logCleaner = new LogCleaner(fileMetadataScanner, context.getLocationFactory(),
+        FileMetadataCleaner fileMetadataCleaner = new FileMetadataCleaner(context.getDatasetManager(), context);
+        LogCleaner logCleaner = new LogCleaner(fileMetadataCleaner, context.getLocationFactory(),
                                                TimeUnit.DAYS.toMillis(fileRetentionDurationDays),
                                                fileCleanupTransactionTimeout);
         scheduledExecutorService.scheduleAtFixedRate(logCleaner, 10, logCleanupIntervalMins, TimeUnit.MINUTES);

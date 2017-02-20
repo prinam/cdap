@@ -125,7 +125,7 @@ public class LogCleanerTest {
         NamespaceId.SYSTEM, ImmutableMap.<String, String>of(), null, null)),
       RetryStrategies.retryOnConflict(20, 100)
     );
-    FileMetadataScanner fileMetadataScanner = new FileMetadataScanner(datasetManager, transactional);
+    FileMetadataCleaner fileMetadataCleaner = new FileMetadataCleaner(datasetManager, transactional);
     LocationFactory locationFactory = injector.getInstance(LocationFactory.class);
     long currentTime = System.currentTimeMillis();
     LogPathIdentifier logPathIdentifier = new LogPathIdentifier("testNs", "testApp", "testEntity");
@@ -141,7 +141,7 @@ public class LogCleanerTest {
     }
 
     Assert.assertEquals(20, dirLocation.list().size());
-    LogCleaner logCleaner = new LogCleaner(fileMetadataScanner, locationFactory, 100, 60);
+    LogCleaner logCleaner = new LogCleaner(fileMetadataCleaner, locationFactory, 100, 60);
     logCleaner.run();
     FileMetaDataReader fileMetaDataReader = injector.getInstance(FileMetaDataReader.class);
     // all meta data should be deleted

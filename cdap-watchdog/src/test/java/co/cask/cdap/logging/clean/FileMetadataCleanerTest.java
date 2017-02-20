@@ -48,6 +48,7 @@ import co.cask.cdap.logging.context.LoggingContextHelper;
 import co.cask.cdap.logging.framework.CDAPLogAppender;
 import co.cask.cdap.logging.framework.LogPathIdentifier;
 import co.cask.cdap.logging.guice.LoggingModules;
+import co.cask.cdap.logging.meta.FileMetaDataReader;
 import co.cask.cdap.logging.meta.FileMetaDataWriter;
 import co.cask.cdap.logging.meta.LoggingStoreTableUtil;
 import co.cask.cdap.logging.write.FileMetaDataManager;
@@ -83,7 +84,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class FileMetadataScannerTest {
+public class FileMetadataCleanerTest {
   @ClassRule
   public static final TemporaryFolder TMP_FOLDER = new TemporaryFolder();
   private static final int CUTOFF_TIME_TRANSACTION = 50;
@@ -171,21 +172,35 @@ public class FileMetadataScannerTest {
       fileMetaDataManager.writeMetaData(sparkContext, eventTimestamp, testLocation);
 
       // write 50 entries in new format
-      long currentTime = eventTimestamp + 5;
+      long newEventTime = eventTimestamp + 1000;
+      long currentTime = newEventTime + 1000;
       LogPathIdentifier logPathIdentifier = new LogPathIdentifier("testNs", "testApp", "testFlow");
 
       for (int i = 50; i < 100; i++) {
-        fileMetaDataWriter.writeMetaData(logPathIdentifier, eventTimestamp + i, currentTime, testLocation);
+        fileMetaDataWriter.writeMetaData(logPathIdentifier, newEventTime + i, currentTime + i, testLocation);
       }
 
-      FileMetadataScanner fileMetadataScanner = new FileMetadataScanner(datasetManager, transactional);
-      List<byte[]> deletedEntries =
-        fileMetadataScanner.scanAndDeleteOldMetaData(TRANSACTION_TIMEOUT, CUTOFF_TIME_TRANSACTION);
-      // we should have deleted 4 rows (flow-context, wflow, mr, spark) rows
-      Assert.assertEquals(4, deletedEntries.size());
-      for (byte[] deletedEntry : deletedEntries) {
-        Assert.assertTrue(Bytes.startsWith(deletedEntry, LoggingStoreTableUtil.OLD_FILE_META_ROW_KEY_PREFIX));
-      }
+      FileMetaDataReader fileMetaDataReader = injector.getInstance(FileMetaDataReader.class);
+      Assert.assertEquals(50, fileMetaDataReader.listFiles(LoggingContextHelper.getLogPathIdentifier(flowContext),
+                                                          eventTimestamp - 1, eventTimestamp + 100).size());
+      Assert.assertEquals(1, fileMetaDataReader.listFiles(LoggingContextHelper.getLogPathIdentifier(wflowContext),
+                                                           eventTimestamp - 1, eventTimestamp + 100).size());
+      Assert.assertEquals(1, fileMetaDataReader.listFiles(LoggingContextHelper.getLogPathIdentifier(mrContext),
+                                                           eventTimestamp - 1, eventTimestamp + 100).size());
+      Assert.assertEquals(1, fileMetaDataReader.listFiles(LoggingContextHelper.getLogPathIdentifier(sparkContext),
+                                                          eventTimestamp - 1, eventTimestamp + 100).size());
+      FileMetadataCleaner fileMetadataCleaner = new FileMetadataCleaner(datasetManager, transactional);
+        fileMetadataCleaner.scanAndDeleteOldMetaData(TRANSACTION_TIMEOUT, CUTOFF_TIME_TRANSACTION);
+      // deleted all old metadata
+      Assert.assertEquals(0, fileMetaDataReader.listFiles(logPathIdentifier,
+                                                           eventTimestamp - 1, eventTimestamp + 100).size());
+      Assert.assertEquals(0, fileMetaDataReader.listFiles(LoggingContextHelper.getLogPathIdentifier(wflowContext),
+                                                          eventTimestamp - 1, eventTimestamp + 100).size());
+      Assert.assertEquals(0, fileMetaDataReader.listFiles(LoggingContextHelper.getLogPathIdentifier(mrContext),
+                                                          eventTimestamp - 1, eventTimestamp + 100).size());
+      Assert.assertEquals(0, fileMetaDataReader.listFiles(LoggingContextHelper.getLogPathIdentifier(sparkContext),
+                                                          eventTimestamp - 1, eventTimestamp + 100).size());
+
     } finally {
       // cleanup meta
       cleanupMetadata(transactional, datasetManager);
@@ -247,7 +262,7 @@ public class FileMetadataScannerTest {
     );
 
     FileMetaDataWriter fileMetaDataWriter = new FileMetaDataWriter(datasetManager, transactional);
-    FileMetadataScanner fileMetadataScanner = new FileMetadataScanner(datasetManager, transactional);
+    FileMetadataCleaner fileMetadataCleaner = new FileMetadataCleaner(datasetManager, transactional);
     try {
       long currentTime = System.currentTimeMillis();
       long eventTimestamp = currentTime - 100;
@@ -262,12 +277,12 @@ public class FileMetadataScannerTest {
       }
 
       long tillTime = currentTime + 50;
-      List<FileMetadataScanner.DeleteEntry> deletedEntries =
-        fileMetadataScanner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
+      List<FileMetadataCleaner.DeleteEntry> deletedEntries =
+        fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
       // we should have deleted 51 rows, till time is inclusive
       Assert.assertEquals(51, deletedEntries.size());
       int count = 0;
-      for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
+      for (FileMetadataCleaner.DeleteEntry deletedEntry : deletedEntries) {
         Assert.assertEquals(expected.get(count), deletedEntry.getLocation());
         count += 1;
       }
@@ -283,11 +298,11 @@ public class FileMetadataScannerTest {
       }
 
       // lets keep the same till time - this should only delete the spark entries now
-      deletedEntries = fileMetadataScanner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
+      deletedEntries = fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
       // we should have deleted 51 rows, till time is inclusive
       Assert.assertEquals(10, deletedEntries.size());
       count = 0;
-      for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
+      for (FileMetadataCleaner.DeleteEntry deletedEntry : deletedEntries) {
         Assert.assertEquals(expected.get(count), deletedEntry.getLocation());
         count += 1;
       }
@@ -319,11 +334,11 @@ public class FileMetadataScannerTest {
 
       tillTime = currentTime + 70;
       // lets delete till 70.
-      deletedEntries = fileMetadataScanner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
+      deletedEntries = fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
       // we should have deleted 51-70 files of flow and 0-9 files of spark files in that order and 0 files of action.
       Assert.assertEquals(30, deletedEntries.size());
       count = 0;
-      for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
+      for (FileMetadataCleaner.DeleteEntry deletedEntry : deletedEntries) {
         Assert.assertEquals(expected.get(count), deletedEntry.getLocation());
         count += 1;
       }
@@ -333,31 +348,25 @@ public class FileMetadataScannerTest {
 
       tillTime = currentTime + 100;
       // lets delete till 100.
-      deletedEntries = fileMetadataScanner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
+      deletedEntries = fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
       // we should have deleted 90-99 of custom action(10) 71-99 (29) files of flow.
       for (int i = 71; i < 100; i++) {
         nextExpected.add(locationFactory.create("testFlowFile" + i).toURI().getPath());
       }
       Assert.assertEquals(39, deletedEntries.size());
       count = 0;
-      for (FileMetadataScanner.DeleteEntry deletedEntry : deletedEntries) {
+      for (FileMetadataCleaner.DeleteEntry deletedEntry : deletedEntries) {
         Assert.assertEquals(nextExpected.get(count), deletedEntry.getLocation());
         count += 1;
       }
 
       // now lets do a delete with till time  = currentTime + 1000, this should return empty result
       tillTime = currentTime + 1000;
-      deletedEntries = fileMetadataScanner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
+      deletedEntries = fileMetadataCleaner.scanAndGetFilesToDelete(tillTime, TRANSACTION_TIMEOUT);
       Assert.assertEquals(0, deletedEntries.size());
     } finally {
       // cleanup meta
       cleanupMetadata(transactional, datasetManager);
     }
-  }
-
-  // todo - add a test where we have entries in old format and new format and we call delete once
-  @Test
-  public void testScanAndDeleteBothMetadata() throws Exception {
-
   }
 }

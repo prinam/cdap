@@ -40,8 +40,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Class to scan and also delete meta data
  */
-public class FileMetadataScanner {
-  private static final Logger LOG = LoggerFactory.getLogger(FileMetadataScanner.class);
+public class FileMetadataCleaner {
+  private static final Logger LOG = LoggerFactory.getLogger(FileMetadataCleaner.class);
   private static final byte[] OLD_ROW_KEY_PREFIX = LoggingStoreTableUtil.OLD_FILE_META_ROW_KEY_PREFIX;
   private static final byte[] OLD_ROW_KEY_PREFIX_END = Bytes.stopKeyForPrefix(OLD_ROW_KEY_PREFIX);
 
@@ -49,11 +49,11 @@ public class FileMetadataScanner {
   private static final byte[] NEW_ROW_KEY_PREFIX_END = Bytes.stopKeyForPrefix(NEW_ROW_KEY_PREFIX);
 
   // cut-off time discount from actual transaction timeout
-  private static final int CUTOFF_DISCOUNT = 5;
+  private static final int TX_TIMEOUT_DISCOUNT_SECS = 5;
   private final Transactional transactional;
   private final DatasetManager datasetManager;
 
-  public FileMetadataScanner(DatasetManager datasetManager, Transactional transactional) {
+  public FileMetadataCleaner(DatasetManager datasetManager, Transactional transactional) {
     this.transactional = transactional;
     this.datasetManager = datasetManager;
   }
@@ -62,11 +62,11 @@ public class FileMetadataScanner {
    * scans for meta data in old format which has expired the log retention.
    */
   @VisibleForTesting
-  List<byte[]> scanAndDeleteOldMetaData(int transactionTimeout, final int cutoffTransactionTime) {
-    final List<byte[]> deletedEntries = new ArrayList<>();
+  void scanAndDeleteOldMetaData(int transactionTimeout, final int cutoffTransactionTime) {
     try {
       transactional.execute(transactionTimeout, new TxRunnable() {
         public void run(DatasetContext context) throws Exception {
+          int deletedRows = 0;
           Stopwatch stopwatch = new Stopwatch();
           stopwatch.start();
           Table table = LoggingStoreTableUtil.getMetadataTable(context, datasetManager);
@@ -74,40 +74,38 @@ public class FileMetadataScanner {
           Scan scan = new Scan(OLD_ROW_KEY_PREFIX, OLD_ROW_KEY_PREFIX_END, null);
           try (Scanner scanner = table.scan(scan)) {
             Row row;
-            while ((row = scanner.next()) != null) {
-              if (stopwatch.elapsedTime(TimeUnit.SECONDS) > cutoffTransactionTime) {
-                break;
-              }
+            while (stopwatch.elapsedTime(TimeUnit.SECONDS) < cutoffTransactionTime && (row = scanner.next()) != null) {
               byte[] rowKey = row.getRow();
               // delete all columns for this row
               table.delete(rowKey);
-              deletedEntries.add(rowKey);
+              deletedRows++;
             }
           }
+          LOG.info("Deleted {} entries from the meta table for the old log format", deletedRows);
+          stopwatch.stop();
         }
       });
     } catch (TransactionFailureException e) {
       LOG.warn("Got Exception while deleting old metadata", e);
-      // not required as we dont delete files in old format, but still safe to clear.
-      deletedEntries.clear();
     }
-    LOG.info("Deleted {} entries from the meta table for the old log format", deletedEntries.size());
-    return deletedEntries;
   }
 
   /**
-   * scans for meta data in old format which has expired the log retention.
+   * scans for meta data in new format which has expired the log retention.
    * @param tillTime time till which files will be deleted
    * @param transactionTimeout transaction timeout to use for scanning entries, deleting entries.
    * @return list of DeleteEntry - used to get files to delete for which metadata has already been deleted
    */
   public List<DeleteEntry> scanAndGetFilesToDelete(final long tillTime, final int transactionTimeout) {
     final List<DeleteEntry> toDelete = new ArrayList<>();
-    if (transactionTimeout < CUTOFF_DISCOUNT) {
+    if (transactionTimeout < TX_TIMEOUT_DISCOUNT_SECS) {
       LOG.warn("Transaction timeout for log cleanup is really low {}s", transactionTimeout);
     }
+
     final int cutOffTransactionTime =
-      transactionTimeout > CUTOFF_DISCOUNT ? transactionTimeout - CUTOFF_DISCOUNT : transactionTimeout;
+      transactionTimeout > TX_TIMEOUT_DISCOUNT_SECS ?
+        transactionTimeout - TX_TIMEOUT_DISCOUNT_SECS : transactionTimeout / 2;
+
     try {
       transactional.execute(transactionTimeout, new TxRunnable() {
         @Override
@@ -118,34 +116,30 @@ public class FileMetadataScanner {
           Table table = LoggingStoreTableUtil.getMetadataTable(context, datasetManager);
           byte[] startRowKey = NEW_ROW_KEY_PREFIX;
           byte[] endRowKey = NEW_ROW_KEY_PREFIX_END;
-          Scanner scanner;
           boolean reachedEnd = false;
           while (!reachedEnd) {
-            if (stopwatch.elapsedTime(TimeUnit.SECONDS) > cutOffTransactionTime) {
+            if (stopwatch.elapsedTime(TimeUnit.SECONDS) >= cutOffTransactionTime) {
               break;
             }
-            scanner = table.scan(startRowKey, endRowKey);
-            Row row;
-            while ((row = scanner.next()) != null) {
-              byte[] rowkey = row.getRow();
-              // file creation time is the last 8-bytes in rowkey in the new format
-              long creationTime = Bytes.toLong(rowkey, rowkey.length - Bytes.SIZEOF_LONG, Bytes.SIZEOF_LONG);
-              if (creationTime <= tillTime) {
-                // expired - can be deleted
-                toDelete.add(
-                  new DeleteEntry(rowkey,
-                                  Bytes.toString(row.get(LoggingStoreTableUtil.META_TABLE_COLUMN_KEY))));
-              } else {
-                // update start-row key based on the logging context and start a new scan.
-                startRowKey = Bytes.add(NEW_ROW_KEY_PREFIX, getNextContextStartKey(rowkey));
-                scanner.close();
-                break;
+            try (Scanner scanner = table.scan(startRowKey, endRowKey)) {
+              Row row;
+              while ((row = scanner.next()) != null) {
+                byte[] rowkey = row.getRow();
+                // file creation time is the last 8-bytes in rowkey in the new format
+                long creationTime = Bytes.toLong(rowkey, rowkey.length - Bytes.SIZEOF_LONG, Bytes.SIZEOF_LONG);
+                if (creationTime <= tillTime) {
+                  // expired - can be deleted
+                  toDelete.add(
+                    new DeleteEntry(rowkey,
+                                    Bytes.toString(row.get(LoggingStoreTableUtil.META_TABLE_COLUMN_KEY))));
+                } else {
+                  // update start-row key based on the logging context and start a new scan.
+                  startRowKey = Bytes.add(NEW_ROW_KEY_PREFIX, getNextContextStartKey(rowkey));
+                  break;
+                }
               }
-            }
-            // if row is null, then scanner next returned null. so we have reached the end.
-            if (row == null) {
-              reachedEnd = true;
-              scanner.close();
+              // if row is null, then scanner next returned null. so we have reached the end.
+              reachedEnd = row == null;
             }
           }
         }
@@ -168,25 +162,6 @@ public class FileMetadataScanner {
     return toDelete;
   }
 
-
-  class DeleteEntry {
-    private byte[] rowkey;
-    private String location;
-
-    private DeleteEntry(byte[] rowkey, String location) {
-      this.rowkey = rowkey;
-      this.location = location;
-    }
-
-    private byte[] getRowKey() {
-      return rowkey;
-    }
-
-    String getLocation() {
-      return location;
-    }
-  }
-
   /**
    * delete the rows specified in the list
    * if delete time is closer to transaction timeout, we break and return list of deleted entries so far.
@@ -204,7 +179,7 @@ public class FileMetadataScanner {
           stopwatch.start();
           Table table = LoggingStoreTableUtil.getMetadataTable(context, datasetManager);
           for (DeleteEntry entry : toDeleteRows) {
-            if (stopwatch.elapsedTime(TimeUnit.SECONDS) > cutOffTransactionTimeout) {
+            if (stopwatch.elapsedTime(TimeUnit.SECONDS) >= cutOffTransactionTimeout) {
               break;
             }
             table.delete(entry.getRowKey());
@@ -216,7 +191,7 @@ public class FileMetadataScanner {
       });
     } catch (TransactionFailureException e) {
       LOG.warn("Exception while deleting metadata entries", e);
-      // exception, no metadata entry deleted, skip deleting files
+      // exception, no metadata entry will be deleted, skip deleting files
       return new ArrayList<>();
     }
     return deletedEntries;
@@ -226,10 +201,27 @@ public class FileMetadataScanner {
     // rowkey : <prefix-bytes>:context:event-ts(8):creation-time(8)
     int contextLength = rowkey.length -
       (LoggingStoreTableUtil.NEW_FILE_META_ROW_KEY_PREFIX.length + 2 * Bytes.SIZEOF_LONG);
-    Preconditions.checkState(contextLength > 0, "Invalid row-key with length" + rowkey.length);
+    Preconditions.checkState(contextLength > 0, String.format("Invalid row-key with length %s", rowkey.length));
     byte[] context = new byte[contextLength];
     System.arraycopy(rowkey, LoggingStoreTableUtil.NEW_FILE_META_ROW_KEY_PREFIX.length, context, 0, contextLength);
     return Bytes.stopKeyForPrefix(context);
   }
 
+  static final class DeleteEntry {
+    private byte[] rowkey;
+    private String location;
+
+    private DeleteEntry(byte[] rowkey, String location) {
+      this.rowkey = rowkey;
+      this.location = location;
+    }
+
+    private byte[] getRowKey() {
+      return rowkey;
+    }
+
+    String getLocation() {
+      return location;
+    }
+  }
 }
