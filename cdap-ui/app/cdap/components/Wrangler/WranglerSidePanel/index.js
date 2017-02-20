@@ -16,11 +16,9 @@
 
 import React, { Component } from 'react';
 import WranglerStore from 'components/Wrangler/store';
-import WranglerActions from 'components/Wrangler/store/WranglerActions';
-import shortid from 'shortid';
 import classnames from 'classnames';
-import MyWranglerApi from 'api/wrangler';
 import ColumnsTab from 'components/Wrangler/WranglerSidePanel/ColumnsTab';
+import DirectivesTab from 'components/Wrangler/WranglerSidePanel/DirectivesTab';
 
 require('./WranglerSidePanel.scss');
 
@@ -33,43 +31,17 @@ export default class WranglerSidePanel extends Component {
     this.state = {
       activeTab: 1,
       deleteHover: null,
-      headers: storeState.headers.map((head) => {
-        let obj = {
-          name: head,
-          uniqueId: shortid.generate()
-        };
-        return obj;
-      }),
-      directives: storeState.directives.map((directive) => {
-        let obj = {
-          name: directive,
-          uniqueId: shortid.generate()
-        };
-        return obj;
-      }),
+      headers: storeState.headers,
+      directives: storeState.directives,
       summary: {}
     };
-
-    // this.getSummary();
 
     this.sub = WranglerStore.subscribe(() => {
       let state = WranglerStore.getState().wrangler;
 
       this.setState({
-        headers: state.headers.map((head) => {
-          let obj = {
-            name: head,
-            uniqueId: shortid.generate()
-          };
-          return obj;
-        }),
-        directives: state.directives.map((directive) => {
-          let obj = {
-            name: directive,
-            uniqueId: shortid.generate()
-          };
-          return obj;
-        })
+        headers: state.headers,
+        directives: state.directives
       });
     });
   }
@@ -80,47 +52,6 @@ export default class WranglerSidePanel extends Component {
 
   setActiveTab(tab) {
     this.setState({activeTab: tab});
-  }
-
-  deleteDirective(index) {
-    let state = WranglerStore.getState().wrangler;
-    let directives = state.directives;
-
-    let newDirectives = directives.slice(0, index);
-
-    let params = {
-      namespace: 'default',
-      workspaceId: state.workspaceId,
-      limit: 100,
-      directive: newDirectives
-    };
-
-    MyWranglerApi.execute(params)
-      .subscribe((res) => {
-        this.setState({
-          deleteHover: null
-        });
-
-        WranglerStore.dispatch({
-          type: WranglerActions.setDirectives,
-          payload: {
-            data: res.value,
-            headers: res.header,
-            directives: newDirectives
-          }
-        });
-      }, (err) => {
-        // Should not ever come to this.. this is only if backend
-        // fails somehow
-        console.log('Error deleting directives', err);
-      });
-  }
-
-  onMouseEnter(index) {
-    this.setState({deleteHover: index});
-  }
-  onMouseLeave() {
-    this.setState({deleteHover: null});
   }
 
   renderColumns() {
@@ -150,39 +81,7 @@ export default class WranglerSidePanel extends Component {
 
     return (
       <div className="tab-content">
-        <table className="table">
-          <thead>
-            <th>#</th>
-            <th>Directive</th>
-            <th></th>
-          </thead>
-
-          <tbody>
-            {
-              this.state.directives.map((directive, index) => {
-                return (
-                  <tr
-                    className={classnames({
-                      'inactive': this.state.deleteHover !== null && index >= this.state.deleteHover
-                    })}
-                    key={directive.uniqueId}
-                  >
-                    <td>{index + 1}</td>
-                    <td>{directive.name}</td>
-                    <td>
-                      <span
-                        className="fa fa-times"
-                        onClick={this.deleteDirective.bind(this, index)}
-                        onMouseEnter={this.onMouseEnter.bind(this, index)}
-                        onMouseLeave={this.onMouseLeave.bind(this)}
-                      />
-                    </td>
-                  </tr>
-                );
-              })
-            }
-          </tbody>
-        </table>
+        <DirectivesTab />
       </div>
     );
   }

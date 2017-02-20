@@ -55,19 +55,47 @@ $tab-header-height: 37px;
     .tab-content {
       height: calc(100% - 37px);
       overflow: auto;
+    }
 
-      .table {
-        border-top: 0;
+    .directives-tab {
+      .directives-tab-header,
+      .directives-row {
+        border-bottom: 1px solid #cccccc;
+        padding: 10px;
 
-        th { border-top: 0; }
+        > span {
+          display: inline-block;
 
-        tr.inactive {
+          &:first-child {
+            width: 25px;
+          }
+
+          &:nth-child(2) {
+            width: calc(100% - 50px);
+            vertical-align: middle;
+            word-break: break-word;
+
+            &.expandable { cursor: pointer; }
+
+            &.truncate {
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
+            }
+          }
+        }
+      }
+
+      .directives-tab-header { font-weight: 500; }
+
+      .directives-row {
+        &.inactive {
           background-color: #cccccc;
           color: white;
         }
-
-        td .fa.fa-times { cursor: pointer; }
       }
+
+      .fa.fa-times { cursor: pointer;}
     }
 
     .columns-tab {
