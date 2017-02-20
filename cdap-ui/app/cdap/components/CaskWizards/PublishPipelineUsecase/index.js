@@ -14,18 +14,46 @@
  * the License.
  */
 
-import React, {PropTypes} from 'react';
+import React, {Component, PropTypes} from 'react';
 import PublishPipelineWizard from 'components/CaskWizards/PublishPipeline';
 
-export default function PublishPipelineUsecaseWizard({input, onClose, isOpen}) {
-  return (
-    <PublishPipelineWizard
-      isOpen={isOpen}
-      input={input}
-      onClose={onClose}
-      isUsecase={true}
-    />
-  );
+import T from 'i18n-react';
+
+export default class PublishPipelineUsecaseWizard extends Component {
+  constructor(props) {
+    super(props);
+
+    this.buildSuccessInfo = this.buildSuccessInfo.bind(this);
+  }
+
+  buildSuccessInfo(name, namespace) {
+    let successInfo = {};
+    if (this.props.input.isLastStepInMarket) {
+      let defaultSuccessMessage = T.translate('features.Wizard.PublishPipeline.success');
+      let linkLabel = T.translate('features.Wizard.GoToHomePage');
+      let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.view');
+      let buttonUrl = `/pipelines/ns/${namespace}/view/${name}`;
+      successInfo = {
+        message: `${defaultSuccessMessage} "${name}".`,
+        buttonLabel,
+        buttonUrl,
+        linkLabel,
+        linkUrl: `/cdap/ns/${namespace}`
+      };
+    }
+    return successInfo;
+  }
+
+  render() {
+    return (
+      <PublishPipelineWizard
+        isOpen={this.props.isOpen}
+        input={this.props.input}
+        onClose={this.props.onClose}
+        buildSuccessInfo={this.buildSuccessInfo}
+      />
+    );
+  }
 }
 
 PublishPipelineUsecaseWizard.propTypes = {

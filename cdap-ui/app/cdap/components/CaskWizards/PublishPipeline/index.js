@@ -80,10 +80,6 @@ export default class PublishPipelineWizard extends Component {
     let linkLabel = T.translate('features.Wizard.GoToHomePage');
     let buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.customize');
     let buttonUrl = `/pipelines/ns/${namespace}/studio?draftId=${draftId}`;
-    if (this.props.isUsecase) {
-      buttonLabel = T.translate('features.Wizard.PublishPipeline.callToAction.view');
-      buttonUrl = `/pipelines/ns/${namespace}/view/${name}`;
-    }
     this.setState({
       successInfo: {
         message: `${defaultSuccessMessage} "${name}".`,
@@ -114,7 +110,9 @@ export default class PublishPipelineWizard extends Component {
     };
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let draftId;
-    if (this.props.isUsecase) {
+    // this is the case when this is used in an usecase, so
+    // PublishPipelineUsecase passes the CTA info to this component
+    if (this.props.buildSuccessInfo) {
       return MyPipelineApi
         .publish({
           namespace: currentNamespace,
@@ -125,9 +123,10 @@ export default class PublishPipelineWizard extends Component {
           }
         )
         .map((res) => {
-          if (this.props.input && this.props.input.isLastStepInMarket) {
-            this.buildSuccessInfo(name, currentNamespace);
-          }
+          let successInfo = this.props.buildSuccessInfo(name, currentNamespace);
+            this.setState({
+              successInfo
+            });
           this.eventEmitter.emit(globalEvents.PUBLISHPIPELINE);
           return res;
         });
@@ -187,5 +186,5 @@ PublishPipelineWizard.propTypes = {
   isOpen: PropTypes.bool,
   input: PropTypes.any,
   onClose: PropTypes.func,
-  isUsecase: PropTypes.bool
+  buildSuccessInfo: PropTypes.func,
 };

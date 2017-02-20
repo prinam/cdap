@@ -41,7 +41,7 @@ export default class ArtifactUploadWizard extends Component {
   }
 
   onSubmit() {
-    if (!this.props.isMarket || this.props.input.isLastStepInMarket) {
+    if (!this.props.isMarket) {
       this.buildSuccessInfo();
     }
     return ArtifactUploadActionCreator.uploadArtifact();

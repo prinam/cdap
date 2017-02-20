@@ -50,6 +50,7 @@ export default class UploadDataWizard extends Component {
     let fileContents = state.viewdata.data;
     let currentNamespace = NamespaceStore.getState().selectedNamespace;
     let authToken = cookie.load('CDAP_Auth_Token');
+    // currently no usecases so far require a CTA for this step
     if (!this.props.isUsecase) {
       this.buildSuccessInfo(packagename, streamId, currentNamespace);
     }
