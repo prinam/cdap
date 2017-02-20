@@ -67,31 +67,15 @@ public class TransactionHttpHandler extends AbstractAppFabricHttpHandler {
   private static final Type STRING_LONG_MAP_TYPE = new TypeToken<Map<String, Long>>() { }.getType();
   private static final Type STRING_LONG_SET_MAP_TYPE = new TypeToken<Map<String, Set<Long>>>() { }.getType();
 
+  private final CConfiguration cConf;
   private final TransactionSystemClient txClient;
   private Class<?> debugClazz;
   private Object debugObject;
 
   @Inject
   public TransactionHttpHandler(CConfiguration cConf, TransactionSystemClient txClient) {
+    this.cConf = cConf;
     this.txClient = new TransactionSystemClientAdapter(txClient);
-    try {
-      this.debugClazz = getClass().getClassLoader()
-        .loadClass("org.apache.tephra.hbase.txprune.InvalidListPruningDebug");
-      this.debugObject = debugClazz.newInstance();
-      Configuration hConf = new Configuration();
-      for (Map.Entry<String, String> entry : cConf) {
-        hConf.set(entry.getKey(), entry.getValue());
-      }
-      Method initMethod = debugClazz.getMethod("initialize", Configuration.class);
-      initMethod.setAccessible(true);
-      initMethod.invoke(debugObject, hConf);
-    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
-      LOG.warn("InvalidListPruningDebug class not found. Pruning Debug endpoints will not work.", ex);
-      this.debugClazz = null;
-    } catch (NoSuchMethodException | InvocationTargetException ex) {
-      LOG.warn("Initialize method was not found in InvalidListPruningDebug. Debug endpoints will not work.", ex);
-      this.debugClazz = null;
-    }
   }
 
   /**
@@ -224,6 +208,7 @@ public class TransactionHttpHandler extends AbstractAppFabricHttpHandler {
   @Path("/transactions/prune/regions/{region-name}")
   @GET
   public void getPruneInfo(HttpRequest request, HttpResponder responder, @PathParam("region-name") String regionName) {
+    initializePruningDebug();
     if (debugClazz == null || debugObject == null) {
       responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Invalid List Pruning debug class not found.");
       return;
@@ -250,6 +235,7 @@ public class TransactionHttpHandler extends AbstractAppFabricHttpHandler {
   @GET
   public void getTimeRegions(HttpRequest request, HttpResponder responder,
                              @QueryParam("time") @DefaultValue("9223372036854775807") long time) {
+    initializePruningDebug();
     if (debugClazz == null || debugObject == null) {
       responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Invalid List Pruning debug class not found.");
       return;
@@ -276,6 +262,7 @@ public class TransactionHttpHandler extends AbstractAppFabricHttpHandler {
   @GET
   public void getIdleRegions(HttpRequest request, HttpResponder responder,
                              @QueryParam("limit") @DefaultValue("-1") int numRegions) {
+    initializePruningDebug();
     if (debugClazz == null || debugObject == null) {
       responder.sendString(HttpResponseStatus.INTERNAL_SERVER_ERROR, "Invalid List Pruning debug class not found.");
       return;
@@ -290,6 +277,29 @@ public class TransactionHttpHandler extends AbstractAppFabricHttpHandler {
     } catch (Exception e) {
       responder.sendString(HttpResponseStatus.BAD_REQUEST, e.getMessage());
       LOG.debug("Exception while trying to fetch the idle regions.", e);
+    }
+  }
+
+  private void initializePruningDebug() {
+    if (debugClazz == null || debugObject == null) {
+      try {
+        this.debugClazz = getClass().getClassLoader()
+          .loadClass("org.apache.tephra.hbase.txprune.InvalidListPruningDebug");
+        this.debugObject = debugClazz.newInstance();
+        Configuration hConf = new Configuration();
+        for (Map.Entry<String, String> entry : cConf) {
+          hConf.set(entry.getKey(), entry.getValue());
+        }
+        Method initMethod = debugClazz.getMethod("initialize", Configuration.class);
+        initMethod.setAccessible(true);
+        initMethod.invoke(debugObject, hConf);
+      } catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+        LOG.debug("InvalidListPruningDebug class not found. Pruning Debug endpoints will not work.", ex);
+        this.debugClazz = null;
+      } catch (NoSuchMethodException | InvocationTargetException ex) {
+        LOG.debug("Initialize method was not found in InvalidListPruningDebug. Debug endpoints will not work.", ex);
+        this.debugClazz = null;
+      }
     }
   }
 }
