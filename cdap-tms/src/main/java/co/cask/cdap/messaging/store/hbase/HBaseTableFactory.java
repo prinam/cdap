@@ -51,7 +51,6 @@ import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
-import org.apache.tephra.TxConstants;
 import org.apache.twill.common.Threads;
 import org.apache.twill.filesystem.LocationFactory;
 import org.slf4j.Logger;
@@ -89,7 +88,6 @@ public final class HBaseTableFactory implements TableFactory {
   private final Map<TableId, HTableDescriptor> tableDescriptors;
   private final CoprocessorManager coprocessorManager;
   private final HBaseDDLExecutorFactory ddlExecutorFactory;
-  private final byte[] txMaxLifeTimeInMillis;
 
   @Inject
   HBaseTableFactory(CConfiguration cConf, Configuration hConf, HBaseTableUtil tableUtil,
@@ -130,8 +128,6 @@ public final class HBaseTableFactory implements TableFactory {
                                                callerRunsPolicy);
 
     this.ddlExecutorFactory = new HBaseDDLExecutorFactory(cConf, hConf);
-    this.txMaxLifeTimeInMillis = Bytes.toBytes(TimeUnit.SECONDS.toMillis(
-      cConf.getInt(TxConstants.Manager.CFG_TX_MAX_LIFETIME, TxConstants.Manager.DEFAULT_TX_MAX_LIFETIME)));
   }
 
   @Override
@@ -177,7 +173,7 @@ public final class HBaseTableFactory implements TableFactory {
       tableUtil, tableWithRowKeyDistributor.getHTable(), COLUMN_FAMILY,
       tableWithRowKeyDistributor.getRowKeyDistributor(),
       scanExecutor, cConf.getInt(Constants.MessagingSystem.HBASE_SCAN_CACHE_ROWS),
-      createExceptionHandler(tableId), txMaxLifeTimeInMillis
+      createExceptionHandler(tableId)
     );
   }
 

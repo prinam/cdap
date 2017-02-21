@@ -53,11 +53,10 @@ final class HBaseMessageTable extends AbstractMessageTable {
   private final ExecutorService scanExecutor;
   private final int scanCacheRows;
   private final HBaseExceptionHandler exceptionHandler;
-  private final byte[] txMaxLifeTimeInMillis;
 
   HBaseMessageTable(HBaseTableUtil tableUtil, HTable hTable, byte[] columnFamily,
                     AbstractRowKeyDistributor rowKeyDistributor, ExecutorService scanExecutor, int scanCacheRows,
-                    HBaseExceptionHandler exceptionHandler, byte[] txMaxLifeTimeInMillis) {
+                    HBaseExceptionHandler exceptionHandler) {
     this.tableUtil = tableUtil;
     this.hTable = hTable;
     this.columnFamily = Arrays.copyOf(columnFamily, columnFamily.length);
@@ -65,7 +64,6 @@ final class HBaseMessageTable extends AbstractMessageTable {
     this.scanExecutor = scanExecutor;
     this.scanCacheRows = scanCacheRows;
     this.exceptionHandler = exceptionHandler;
-    this.txMaxLifeTimeInMillis = txMaxLifeTimeInMillis;
   }
 
   @Override
@@ -160,7 +158,6 @@ final class HBaseMessageTable extends AbstractMessageTable {
         // No need to turn the key back to the original row key because we want to put with the actual row key
         PutBuilder putBuilder = tableUtil.buildPut(result.getRow());
         putBuilder.add(columnFamily, TX_COL, txWritePtr);
-        putBuilder.setAttribute("cdap.tx.max.lifetime.millis", txMaxLifeTimeInMillis);
         batchPuts.add(putBuilder.build());
       }
     }
