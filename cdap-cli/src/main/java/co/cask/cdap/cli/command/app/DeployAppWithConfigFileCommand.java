@@ -70,14 +70,13 @@ public class DeployAppWithConfigFileCommand extends AbstractAuthCommand {
 
   @Override
   public String getPattern() {
-    return String.format("deploy app <%s> with config <%s> [%s <%s>]", ArgumentName.APP_JAR_FILE,
-                         ArgumentName.APP_CONFIG_FILE, ArgumentName.PRINCIPAL, ArgumentName.PRINCIPAL);
+    return String.format("deploy app <%s> with config <%s> [principal <%s>]", ArgumentName.APP_JAR_FILE,
+                         ArgumentName.APP_CONFIG_FILE, ArgumentName.PRINCIPAL);
   }
 
   @Override
   public String getDescription() {
-    return String.format("Deploys %s, optionally with a configuration file and a %s", Fragment.of(Article.A,
-                                                                                         ElementType.APP.getName()),
-                         ArgumentName.PRINCIPAL);
+    return String.format("Deploys %s, optionally with a configuration file and a principal",
+                         Fragment.of(Article.A, ElementType.APP.getName()));
   }
 }

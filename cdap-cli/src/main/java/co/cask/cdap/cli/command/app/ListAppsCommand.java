@@ -65,7 +65,7 @@ public class ListAppsCommand extends AbstractAuthCommand {
           public List<?> makeRow(ApplicationRecord object) {
             return Lists.newArrayList(object.getName(), object.getAppVersion(), object.getDescription(),
               object.getArtifact().getName(), object.getArtifact().getVersion(), object.getArtifact().getScope(),
-                                      object.getOwnerPrincipal());
+              object.getOwnerPrincipal());
           }
         }).build();
     cliConfig.getTableRenderer().render(cliConfig, output, table);
