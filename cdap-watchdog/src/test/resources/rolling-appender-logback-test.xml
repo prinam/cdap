@@ -37,8 +37,8 @@
     <filePermissions>644</filePermissions>
 
     <!-- It is an optional parameter, which takes number of miliseconds. Appender will close a file if it is not
-    modified for fileCloseInterval period of time -->
-    <fileCloseInterval>20000</fileCloseInterval>
+    modified for fileMaxInactiveTimeMs period of time -->
+    <fileMaxInactiveTimeMs>20000</fileMaxInactiveTimeMs>
 
     <rollingPolicy class="co.cask.cdap.logging.plugins.FixedWindowRollingPolicy">
       <!--Only specify file name without directory, appender will use appropriate directory specified in filePath-->

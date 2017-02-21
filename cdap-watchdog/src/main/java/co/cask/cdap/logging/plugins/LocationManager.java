@@ -52,16 +52,16 @@ public class LocationManager implements Flushable, Closeable, Syncable {
   private final String filePermissions;
   private final String dirPermissions;
   private final Map<LocationIdentifier, LocationOutputStream> activeLocations;
-  private final long fileCloseInterval;
+  private final long fileMaxInactiveTimeMs;
   private LocationOutputStream invalidOutputStream;
 
   public LocationManager(LocationFactory locationFactory, String basePath, String dirPermissions,
-                         String filePermissions, long fileCloseInterval) {
+                         String filePermissions, long fileMaxInactiveTimeMs) {
     this.logBaseDir = locationFactory.create(basePath);
     this.dirPermissions = dirPermissions;
     this.filePermissions = filePermissions;
     this.activeLocations = new HashMap<>();
-    this.fileCloseInterval = fileCloseInterval;
+    this.fileMaxInactiveTimeMs = fileMaxInactiveTimeMs;
   }
 
   /**
@@ -188,18 +188,18 @@ public class LocationManager implements Flushable, Closeable, Syncable {
       entry.getValue().flush();
 
       if (shouldCloseFile(entry)) {
-        entry.getValue().close();
         iter.remove();
+        entry.getValue().close();
       }
     }
   }
 
   private boolean shouldCloseFile(Map.Entry<LocationIdentifier, LocationOutputStream> entry) {
-    // do not close files if fileCloseInterval is not specified
-    if (fileCloseInterval == 0) {
+    // do not close files if fileMaxInactiveTimeMs is not specified
+    if (fileMaxInactiveTimeMs == 0) {
       return false;
     }
-    return (entry.getValue().getModifiedTimestamp() < (System.currentTimeMillis() - fileCloseInterval));
+    return (entry.getValue().getModifiedTimestamp() < (System.currentTimeMillis() - fileMaxInactiveTimeMs));
   }
 
   /**

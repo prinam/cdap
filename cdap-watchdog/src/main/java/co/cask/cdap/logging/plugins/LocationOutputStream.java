@@ -36,10 +36,10 @@ public class LocationOutputStream extends FilterOutputStream implements Syncable
   private long numOfBytes;
   private long modifiedTimestamp;
 
-  public LocationOutputStream(Location location, OutputStream outputStream, long modifiedTimestamp) {
+  public LocationOutputStream(Location location, OutputStream outputStream, long lastWriteTimestamp) {
     super(outputStream);
     this.location = location;
-    this.modifiedTimestamp = modifiedTimestamp;
+    this.modifiedTimestamp = lastWriteTimestamp;
   }
 
   public Location getLocation() {
