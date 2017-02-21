@@ -18,7 +18,6 @@ package co.cask.cdap.data2.transaction.messaging.coprocessor.hbase11;
 
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
-import co.cask.cdap.data2.dataset2.lib.table.hbase.HBaseTable;
 import co.cask.cdap.data2.transaction.coprocessor.DefaultTransactionStateCacheSupplier;
 import co.cask.cdap.data2.transaction.queue.hbase.coprocessor.CConfigurationReader;
 import co.cask.cdap.data2.util.hbase.HBase11ScanBuilder;
@@ -31,12 +30,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CoprocessorEnvironment;
-import org.apache.hadoop.hbase.DoNotRetryIOException;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Durability;
-import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.coprocessor.BaseRegionObserver;
 import org.apache.hadoop.hbase.coprocessor.ObserverContext;
@@ -50,13 +46,11 @@ import org.apache.hadoop.hbase.regionserver.Store;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
 import org.apache.hadoop.hbase.regionserver.StoreScanner;
 import org.apache.hadoop.hbase.regionserver.compactions.CompactionRequest;
-import org.apache.hadoop.hbase.regionserver.wal.WALEdit;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.tephra.TxConstants;
 import org.apache.tephra.coprocessor.TransactionStateCache;
 import org.apache.tephra.hbase.txprune.CompactionState;
 import org.apache.tephra.persist.TransactionVisibilityState;
-import org.apache.tephra.util.TxUtils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -183,44 +177,6 @@ public class MessageTableRegionObserver extends BaseRegionObserver {
     // Persist the compaction state after a successful compaction
     if (compactionState != null) {
       compactionState.persist();
-    }
-  }
-
-  @Override
-  public void prePut(ObserverContext<RegionCoprocessorEnvironment> e, Put put, WALEdit edit,
-                     Durability durability) throws IOException {
-    if (!put.has(MessagingUtils.Constants.COLUMN_FAMILY, MessagingUtils.Constants.TX_COL)) {
-      return;
-    }
-
-    List<Cell> txCells = put.get(MessagingUtils.Constants.COLUMN_FAMILY, MessagingUtils.Constants.TX_COL);
-    Cell txIdCell = txCells.get(0);
-    if (txIdCell == null) {
-      return;
-    }
-
-    long txId = Bytes.toLong(txIdCell.getValueArray(), txIdCell.getValueOffset(), txIdCell.getValueOffset());
-    CConfiguration cConf = getTopicMetadataCache(e.getEnvironment()).getCConfiguration();
-    long lifeTimeInMillis;
-    if (cConf == null) {
-      byte[] lifeTimeInMillisBytes = put.getAttribute(HBaseTable.TX_MAX_LIFETIME_MILLIS_KEY);
-      if (lifeTimeInMillisBytes == null) {
-        LOG.warn("txMaxLifetimeMillis is not available in client's operation attributes. " +
-                   "Defaulting to default tx_max_lifetime");
-        lifeTimeInMillis = TimeUnit.SECONDS.toMillis(TxConstants.Manager.DEFAULT_TX_MAX_LIFETIME);
-      } else {
-        lifeTimeInMillis = Bytes.toLong(put.getAttribute(HBaseTable.TX_MAX_LIFETIME_MILLIS_KEY));
-      }
-    } else {
-      lifeTimeInMillis = TimeUnit.SECONDS.toMillis(cConf.getLong(TxConstants.Manager.CFG_TX_MAX_LIFETIME,
-                                                                 TxConstants.Manager.DEFAULT_TX_MAX_LIFETIME));
-    }
-
-    boolean validLifetime =
-      (TxUtils.getTimestamp(txId) + lifeTimeInMillis) > System.currentTimeMillis();
-    if (!validLifetime) {
-      throw new DoNotRetryIOException(String.format("Transaction %s has exceeded max lifetime %s ms",
-                                                    txId, lifeTimeInMillis));
     }
   }
 
