@@ -77,7 +77,6 @@ public class HBaseQueueClientFactory implements QueueClientFactory, ProgramConte
   private final HBaseQueueUtil queueUtil;
   private final HBaseTableUtil hBaseTableUtil;
   private final TransactionExecutorFactory txExecutorFactory;
-  private final byte[] txMaxLifeTimeInMillis;
 
   @Inject
   public HBaseQueueClientFactory(CConfiguration cConf, Configuration hConf, HBaseTableUtil hBaseTableUtil,
@@ -88,8 +87,6 @@ public class HBaseQueueClientFactory implements QueueClientFactory, ProgramConte
     this.queueUtil = new HBaseQueueUtilFactory().get();
     this.hBaseTableUtil = hBaseTableUtil;
     this.txExecutorFactory = txExecutorFactory;
-    this.txMaxLifeTimeInMillis = Bytes.toBytes(TimeUnit.SECONDS.toMillis(
-      cConf.getInt(TxConstants.Manager.CFG_TX_MAX_LIFETIME, TxConstants.Manager.DEFAULT_TX_MAX_LIFETIME)));
   }
 
   @Override
@@ -226,7 +223,7 @@ public class HBaseQueueClientFactory implements QueueClientFactory, ProgramConte
   private HBaseQueueProducer createProducer(HTable hTable, QueueName queueName, QueueMetrics queueMetrics,
                                             HBaseQueueStrategy queueStrategy,
                                             Iterable<? extends ConsumerGroupConfig> groupConfigs) throws IOException {
-    return new HBaseQueueProducer(hTable, queueName, queueMetrics, queueStrategy, groupConfigs, txMaxLifeTimeInMillis);
+    return new HBaseQueueProducer(hTable, queueName, queueMetrics, queueStrategy, groupConfigs);
   }
 
   /**
