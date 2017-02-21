@@ -101,8 +101,7 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
   private int unSyncedEvents;
 
   public KafkaLogProcessorPipeline(LogProcessorPipelineContext context, CheckpointManager checkpointManager,
-                                   BrokerService brokerService, KafkaPipelineConfig config,
-                                   MetricsContext metricsContext) {
+                                   BrokerService brokerService, KafkaPipelineConfig config) {
     this.name = context.getName();
     this.context = context;
     this.checkpointManager = checkpointManager;
@@ -113,7 +112,7 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
     this.eventQueue = new TimeEventQueue<>(config.getPartitions());
     this.serializer = new LoggingEventSerializer();
     this.kafkaConsumers = new HashMap<>();
-    this.metricsContext = metricsContext;
+    this.metricsContext = context;
   }
 
   @Override
@@ -134,6 +133,9 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
 
     fetchExecutor = Executors.newFixedThreadPool(
       partitions.size(), Threads.createDaemonThreadFactory("fetcher-" + name + "-%d"));
+
+    // emit pipeline related config as metrics
+    emitConfigMetrics();
 
     LOG.info("Log processor pipeline for {} with config {} started with checkpoint {}", name, config, checkpoints);
   }
@@ -349,7 +351,9 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
     TimeEventQueue.EventIterator<ILoggingEvent, Long> iterator = eventQueue.iterator();
 
     int eventsAppended = 0;
-    long delay = -1;
+    long minDelay = Long.MAX_VALUE;
+    long maxDelay = -1;
+
     while (iterator.hasNext()) {
       ILoggingEvent event = iterator.next();
 
@@ -359,10 +363,10 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
         break;
       }
 
-      if (delay == -1) {
-        // find delay for one of the event
-        delay = System.currentTimeMillis() - event.getTimeStamp();
-      }
+      // update delay
+      long delay = System.currentTimeMillis() - event.getTimeStamp();
+      minDelay = delay < minDelay ? delay : minDelay;
+      maxDelay = delay > maxDelay ? delay : maxDelay;
 
       try {
         // Otherwise, append the event
@@ -404,16 +408,17 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
         }
       }
     }
+    if (eventsAppended > 0) {
+      // events were appended from iterator
+      metricsContext.gauge(Constants.Metrics.Name.Log.PROCESS_MIN_DELAY, minDelay);
+      metricsContext.gauge(Constants.Metrics.Name.Log.PROCESS_MAX_DELAY, maxDelay);
+      metricsContext.increment(Constants.Metrics.Name.Log.PROCESS_MESSAGES_COUNT, eventsAppended);
+    }
 
     // Always try to call flush, even there was no event written. This is needed so that appender get called
     // periodically even there is no new events being appended to perform housekeeping work.
     // Failure to flush is ok and it will be retried by the wrapped appender
     try {
-      if (delay != -1) {
-        // events were appended from iterator
-        metricsContext.gauge(Constants.Metrics.Name.Log.PROCESS_DELAY, delay);
-        metricsContext.increment(Constants.Metrics.Name.Log.PROCESS_MESSAGES_COUNT, eventsAppended);
-      }
       metricsContext.gauge("event.queue.size.bytes", eventQueue.getEventSize());
       context.flush();
     } catch (IOException e) {
@@ -581,6 +586,13 @@ public final class KafkaLogProcessorPipeline extends AbstractExecutionThreadServ
     BrokerInfo getBrokerInfo() {
       return brokerInfo;
     }
+  }
+
+  private void emitConfigMetrics() {
+    metricsContext.gauge("max.buffer.size", config.getMaxBufferSize());
+    metricsContext.gauge("event.delay.millis", config.getEventDelayMillis());
+    metricsContext.gauge("kafka.fetch.buffer.size", config.getKafkaFetchBufferSize());
+    metricsContext.gauge("checkpoint.interval.millis", config.getCheckpointIntervalMillis());
   }
 
   /**

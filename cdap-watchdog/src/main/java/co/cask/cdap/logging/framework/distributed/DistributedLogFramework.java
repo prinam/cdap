@@ -17,7 +17,6 @@
 package co.cask.cdap.logging.framework.distributed;
 
 import co.cask.cdap.api.logging.AppenderContext;
-import co.cask.cdap.api.metrics.MetricsContext;
 import co.cask.cdap.common.conf.CConfiguration;
 import co.cask.cdap.common.conf.Constants;
 import co.cask.cdap.common.resource.ResourceBalancerService;
@@ -30,7 +29,6 @@ import co.cask.cdap.logging.meta.CheckpointManagerFactory;
 import co.cask.cdap.logging.pipeline.LogProcessorPipelineContext;
 import co.cask.cdap.logging.pipeline.kafka.KafkaLogProcessorPipeline;
 import co.cask.cdap.logging.pipeline.kafka.KafkaPipelineConfig;
-import co.cask.cdap.proto.id.NamespaceId;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
@@ -47,7 +45,6 @@ import org.apache.twill.kafka.client.BrokerService;
 import org.apache.twill.zookeeper.ZKClient;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,14 +91,11 @@ public class DistributedLogFramework extends ResourceBalancerService {
 
       long bufferSize = getBufferSize(pipelineCount, cConf, partitions.size());
       final String topic = cConf.get(Constants.Logging.KAFKA_TOPIC);
-      final LogsMetricsContext logsMetricsContext = new LogsMetricsContext(context.getMetricsContext(),
-                                                                           context.getName(), context.getInstanceId());
       final KafkaPipelineConfig config = new KafkaPipelineConfig(
         topic, partitions, bufferSize,
         cConf.getLong(Constants.Logging.PIPELINE_EVENT_DELAY_MS),
         cConf.getInt(Constants.Logging.PIPELINE_KAFKA_FETCH_SIZE),
-        cConf.getLong(Constants.Logging.PIPELINE_CHECKPOINT_INTERVAL_MS),
-        logsMetricsContext
+        cConf.getLong(Constants.Logging.PIPELINE_CHECKPOINT_INTERVAL_MS)
       );
 
       RetryStrategy retryStrategy = RetryStrategies.fromConfiguration(cConf, "system.log.process.");
@@ -109,9 +103,9 @@ public class DistributedLogFramework extends ResourceBalancerService {
         @Override
         public Service get() {
           return new KafkaLogProcessorPipeline(
-            new LogProcessorPipelineContext(cConf, context.getName(), context),
-            checkpointManagerFactory.create(topic, pipelineSpec.getCheckpointPrefix()), brokerService, config,
-            logsMetricsContext);
+            new LogProcessorPipelineContext(cConf, context.getName(), context,
+                                            context.getMetricsContext(), context.getInstanceId()),
+            checkpointManagerFactory.create(topic, pipelineSpec.getCheckpointPrefix()), brokerService, config);
         }
       }, retryStrategy));
     }
@@ -140,50 +134,6 @@ public class DistributedLogFramework extends ResourceBalancerService {
         }));
       }
     };
-  }
-
-  /**
-   * metrics context used for emitting system metrics about logs.
-   * metric names are prefixed by log pipeline name and instance-id.
-   */
-  class LogsMetricsContext implements MetricsContext {
-    private final MetricsContext metricsContext;
-    private final String pipelineName;
-    private final int instanceId;
-
-    LogsMetricsContext(MetricsContext metricsContext, String pipelineName, int instanceId) {
-      Map<String, String> logTags = new HashMap<>();
-      logTags.put(Constants.Metrics.Tag.NAMESPACE, NamespaceId.SYSTEM.getNamespace());
-      logTags.put(Constants.Metrics.Tag.COMPONENT, Constants.Service.LOGSAVER);
-      this.metricsContext = metricsContext.childContext(logTags);
-      this.pipelineName = pipelineName;
-      this.instanceId = instanceId;
-    }
-
-    @Override
-    public MetricsContext childContext(Map<String, String> tags) {
-      return metricsContext.childContext(tags);
-    }
-
-    @Override
-    public MetricsContext childContext(String tagName, String tagValue) {
-      return metricsContext.childContext(tagName, tagValue);
-    }
-
-    @Override
-    public Map<String, String> getTags() {
-      return metricsContext.getTags();
-    }
-
-    @Override
-    public void increment(String metricName, long value) {
-      metricsContext.increment(String.format("%s.%s.%s", pipelineName, instanceId, metricName), value);
-    }
-
-    @Override
-    public void gauge(String metricName, long value) {
-      metricsContext.gauge(String.format("%s.%s.%s", pipelineName, instanceId, metricName), value);
-    }
   }
 
   /**

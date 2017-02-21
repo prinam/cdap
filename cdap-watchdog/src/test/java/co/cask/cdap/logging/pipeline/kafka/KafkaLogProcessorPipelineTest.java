@@ -143,14 +143,14 @@ public class KafkaLogProcessorPipelineTest {
     final TestAppender appender = getAppender(loggerContext.getLogger(Logger.ROOT_LOGGER_NAME),
                                               "Test", TestAppender.class);
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 300, 1048576, 500,
-                                                         NO_OP_METRICS_CONTEXT);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 300, 1048576, 500);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
     KafkaLogProcessorPipeline pipeline = new KafkaLogProcessorPipeline(
-      new LogProcessorPipelineContext(CConfiguration.create(), "test", loggerContext), checkpointManager,
-      KAFKA_TESTER.getBrokerService(), config, new NoopMetricsContext());
+      new LogProcessorPipelineContext(CConfiguration.create(), "test", loggerContext, NO_OP_METRICS_CONTEXT, 0),
+      checkpointManager,
+      KAFKA_TESTER.getBrokerService(), config);
 
     pipeline.startAndWait();
 
@@ -220,14 +220,14 @@ public class KafkaLogProcessorPipelineTest {
 
     // Use a longer checkpoint time and a short event delay. Should expect flush called at least once
     // per event delay.
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 2000,
-                                                         NO_OP_METRICS_CONTEXT);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 2000);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
     KafkaLogProcessorPipeline pipeline = new KafkaLogProcessorPipeline(
-      new LogProcessorPipelineContext(CConfiguration.create(), "test", loggerContext), checkpointManager,
-      KAFKA_TESTER.getBrokerService(), config, NO_OP_METRICS_CONTEXT);
+      new LogProcessorPipelineContext(CConfiguration.create(), "test", loggerContext, NO_OP_METRICS_CONTEXT, 0),
+      checkpointManager,
+      KAFKA_TESTER.getBrokerService(), config);
 
     pipeline.startAndWait();
 
@@ -282,14 +282,15 @@ public class KafkaLogProcessorPipelineTest {
 
     String topic = "metricsPipeline";
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 200,
-                                                         NO_OP_METRICS_CONTEXT);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 200);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
     KafkaLogProcessorPipeline pipeline = new KafkaLogProcessorPipeline(
-      new LogProcessorPipelineContext(CConfiguration.create(), "testMetricAppender", loggerContext), checkpointManager,
-      KAFKA_TESTER.getBrokerService(), config, NO_OP_METRICS_CONTEXT);
+      new LogProcessorPipelineContext(CConfiguration.create(), "testMetricAppender",
+                                      loggerContext, NO_OP_METRICS_CONTEXT, 0),
+      checkpointManager,
+      KAFKA_TESTER.getBrokerService(), config);
 
     pipeline.startAndWait();
 
@@ -409,14 +410,15 @@ public class KafkaLogProcessorPipelineTest {
 
     String topic = "testMultiAppenders";
     TestCheckpointManager checkpointManager = new TestCheckpointManager();
-    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 200,
-                                                         NO_OP_METRICS_CONTEXT);
+    KafkaPipelineConfig config = new KafkaPipelineConfig(topic, Collections.singleton(0), 1024, 100, 1048576, 200);
     KAFKA_TESTER.createTopic(topic, 1);
 
     loggerContext.start();
     KafkaLogProcessorPipeline pipeline = new KafkaLogProcessorPipeline(
-      new LogProcessorPipelineContext(CConfiguration.create(), "testMultiAppenders", loggerContext), checkpointManager,
-      KAFKA_TESTER.getBrokerService(), config, NO_OP_METRICS_CONTEXT);
+      new LogProcessorPipelineContext(CConfiguration.create(), "testMultiAppenders",
+                                      loggerContext, NO_OP_METRICS_CONTEXT, 0),
+      checkpointManager,
+      KAFKA_TESTER.getBrokerService(), config);
 
     pipeline.startAndWait();
 

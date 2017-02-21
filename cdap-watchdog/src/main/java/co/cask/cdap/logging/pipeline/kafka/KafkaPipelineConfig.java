@@ -16,7 +16,6 @@
 
 package co.cask.cdap.logging.pipeline.kafka;
 
-import co.cask.cdap.api.metrics.MetricsContext;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
@@ -34,22 +33,13 @@ public final class KafkaPipelineConfig {
   private final long checkpointIntervalMillis;
 
   public KafkaPipelineConfig(String topic, Set<Integer> partitions, long maxBufferSize,
-                             long eventDelayMillis, int kafkaFetchBufferSize, long checkpointIntervalMillis,
-                             MetricsContext metricsContext) {
+                             long eventDelayMillis, int kafkaFetchBufferSize, long checkpointIntervalMillis) {
     this.topic = topic;
     this.partitions = ImmutableSet.copyOf(partitions);
     this.maxBufferSize = maxBufferSize;
     this.eventDelayMillis = eventDelayMillis;
     this.kafkaFetchBufferSize = kafkaFetchBufferSize;
     this.checkpointIntervalMillis = checkpointIntervalMillis;
-    emitConfigMetrics(metricsContext);
-  }
-
-  private void emitConfigMetrics(MetricsContext metricsContext) {
-    metricsContext.gauge("max.buffer.size", maxBufferSize);
-    metricsContext.gauge("event.delay.millis", eventDelayMillis);
-    metricsContext.gauge("kafka.fetch.buffer.size", kafkaFetchBufferSize);
-    metricsContext.gauge("checkpoint.interval.millis", checkpointIntervalMillis);
   }
 
   String getTopic() {
