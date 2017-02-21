@@ -273,6 +273,27 @@ public class CLIMainTest extends CLITestBase {
   }
 
   @Test
+  public void testDeployAppWithPrincipal() throws Exception {
+    String streamId = "testStream";
+    String datasetId = "testTable";
+    String principal = "thePrincipal";
+
+    File appJarFile = createAppJarFile(ConfigTestApp.class);
+    File configFile = new File(TMP_FOLDER.newFolder(), "testConfigFile.txt");
+    try (BufferedWriter writer = Files.newWriter(configFile, Charsets.UTF_8)) {
+      writer.write(String.format("{\n\"streamName\":\"%s\",\n\"tableName\":\"%s\"\n}", streamId, datasetId));
+      writer.close();
+    }
+
+    testCommandOutputContains(cli, String.format("deploy app %s with config %s principal %s",
+                                                 appJarFile.getAbsolutePath(), configFile.getAbsolutePath(), principal),
+                              "Successfully deployed application");
+    testCommandOutputContains(cli, "list streams", streamId);
+    testCommandOutputContains(cli, "list dataset instances", datasetId);
+    testCommandOutputContains(cli, "delete app " + ConfigTestApp.NAME, "Successfully");
+  }
+
+  @Test
   public void testStream() throws Exception {
     String streamId = PREFIX + "sdf123";
 
