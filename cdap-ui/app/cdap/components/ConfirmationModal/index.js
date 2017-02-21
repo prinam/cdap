@@ -33,7 +33,8 @@ export default class ConfirmationModal extends Component {
 
   shouldComponentUpdate(nextProps) {
     // the modal shouldn't change when the status of a program changes, if it's already open
-    return !(this.props.isOpen === nextProps.isOpen && nextProps.status !== 'loading');
+    // unless it's to show the spinning wheel
+    return !(this.props.isOpen === nextProps.isOpen && !nextProps.isLoading);
   }
 
   componentWillUnmount() {
