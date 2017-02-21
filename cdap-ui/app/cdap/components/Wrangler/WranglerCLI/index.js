@@ -35,6 +35,7 @@ export default class WranglerCLI extends Component {
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.toggleAutoComplete = this.toggleAutoComplete.bind(this);
     this.dismissError = this.dismissError.bind(this);
+    this.handlePaste = this.handlePaste.bind(this);
   }
 
   componentDidMount() {
@@ -56,18 +57,18 @@ export default class WranglerCLI extends Component {
     let split = this.state.directiveInput.split(' ');
     if (split.length === 1 || split[1].length === 0) { return; }
 
-    this.execute();
+    this.execute([this.state.directiveInput]);
   }
 
   toggleAutoComplete() {
     this.setState({autoCompleteOpen: !this.state.autoCompleteOpen});
   }
 
-  execute() {
-    if (this.state.directiveInput.length === 0) { return; }
+  execute(addDirective) {
+    if (addDirective.length === 0) { return; }
 
     let store = WranglerStore.getState().wrangler;
-    let updatedDirectives = store.directives.concat([this.state.directiveInput]);
+    let updatedDirectives = store.directives.concat(addDirective);
 
     let workspaceId = store.workspaceId;
 
@@ -122,6 +123,20 @@ export default class WranglerCLI extends Component {
     );
   }
 
+  handlePaste(e) {
+    let data = e.clipboardData.getData('Text');
+    data = data.split('\n')
+      .filter((row) => {
+        // filter out empty rows
+        return row.trim().length > 0;
+      });
+
+    if (data.length > 1) {
+      e.preventDefault();
+      this.execute(data);
+    }
+  }
+
   render() {
     return (
       <div className="wrangler-cli">
@@ -148,6 +163,7 @@ export default class WranglerCLI extends Component {
               onChange={this.handleDirectiveChange}
               onKeyDown={this.handleKeyDown}
               ref={(ref) => this.directiveRef = ref}
+              onPaste={this.handlePaste}
             />
           </div>
         </div>
