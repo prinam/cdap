@@ -33,8 +33,18 @@ import java.util.UUID;
  */
 public abstract class TableUpdater {
 
+  private class TimeValue {
+    private long time;
+    private boolean stale;
+
+    private TimeValue(long time, boolean stale) {
+      this.time = time;
+      this.stale = stale;
+    }
+  }
+
   private static final Logger LOG = LoggerFactory.getLogger(TableUpdater.class);
-  private HashMap<String, Long> cachedUpdates;
+  private HashMap<String, TimeValue> cachedUpdates;
   private final Object cachedUpdatesLock = new Object();
   private Timer updateTimer;
 
@@ -43,6 +53,8 @@ public abstract class TableUpdater {
   public final String rowType;
   public final Configuration conf;
   public boolean tableExists = false;
+
+
 
   public TableUpdater(String rowType, final Configuration conf) {
     this.columnFamily = Bytes.toBytes(ReplicationConstants.ReplicationStatusTool.TIME_FAMILY);
@@ -60,6 +72,7 @@ public abstract class TableUpdater {
       : ReplicationConstants.ReplicationStatusTool.REPLICATION_PERIOD_DEFAULT;
 
     cachedUpdates = new HashMap<>();
+    LOG.info("DW Thread:" + Thread.currentThread().getId() + " starting ROW: " + rowType);
     setupTimer(delay, period);
   }
 
@@ -70,11 +83,25 @@ public abstract class TableUpdater {
    * @param time is the value for the Map
    */
   public void updateTime(String regionName, long time) throws IOException {
+    LOG.info("DW Thread:" + Thread.currentThread().getId() + " UPDATE REGION "
+               + regionName + " ROW " + rowType + " BEGIN");
     synchronized (cachedUpdatesLock) {
-      if (!cachedUpdates.containsKey(regionName) || time > cachedUpdates.get(regionName)) {
-        cachedUpdates.put(regionName, time);
+      try {
+        LOG.info("DW Thread:" + Thread.currentThread().getId() + " SLEEP START WITH LOCK");
+        Thread.sleep(1000);
+        LOG.info("DW Thread:" + Thread.currentThread().getId() + " SLEEP FINISH");
+      } catch (InterruptedException e) {
+        // catch this
+        LOG.info("catch Interrupted");
+      }
+
+      if (!cachedUpdates.containsKey(regionName) || time > cachedUpdates.get(regionName).time) {
+        LOG.info("DW Mark {} {} new.", regionName, time);
+        cachedUpdates.put(regionName, new TimeValue(time, false));
       }
     }
+    LOG.info("DW Thread:" + Thread.currentThread().getId() + " UPDATE REGION " + regionName
+               + " ROW " + rowType + " END");
   }
 
   protected final byte[] getRowKey(String regionName) {
@@ -88,6 +115,7 @@ public abstract class TableUpdater {
       @Override
       public void run() {
         try {
+          LOG.info("DW RUN NOW!");
           if (!tableExists) {
             createTableIfNotExists(conf);
             tableExists = true;
@@ -95,9 +123,9 @@ public abstract class TableUpdater {
           HashMap<String, Long> updatesToWrite;
           synchronized (cachedUpdatesLock) {
             // Make a copy so HBase write can happen outside of the synchronized block
-            updatesToWrite = cachedUpdates;
+            updatesToWrite = getNewEntries(cachedUpdates);
             // Remove stale updates
-            cachedUpdates = new HashMap<>();
+            markMapDirty(cachedUpdates);
           }
           if (!updatesToWrite.isEmpty()) {
             LOG.debug("Update Replication State table now. {} entries.", updatesToWrite.size());
@@ -111,10 +139,29 @@ public abstract class TableUpdater {
     updateTimer.scheduleAtFixedRate(updateTask, delay, period);
   }
 
+  private void markMapDirty(HashMap<String, TimeValue> updateMap) {
+    for (Map.Entry<String, TimeValue> entry : updateMap.entrySet()) {
+      LOG.info("DW Marking Region {} stale.", entry.getKey());
+      entry.getValue().stale = true;
+    }
+  }
+
+  private HashMap<String, Long> getNewEntries(HashMap<String, TimeValue> updateMap) {
+    HashMap<String, Long> cleanMap = new HashMap<>();
+    for (Map.Entry<String, TimeValue> entry : updateMap.entrySet()) {
+      if (!entry.getValue().stale) {
+        cleanMap.put(entry.getKey(), entry.getValue().time);
+      } else {
+        LOG.info("DW Not picking up stale entry {} {}", entry.getKey(), entry.getValue().time);
+      }
+    }
+    return cleanMap;
+  }
+
   public void cancelTimer() throws IOException {
     LOG.info("Cancelling Update Timer now.");
     synchronized (cachedUpdatesLock) {
-      writeState(cachedUpdates);
+      writeState(getNewEntries(cachedUpdates));
     }
     updateTimer.cancel();
   }
