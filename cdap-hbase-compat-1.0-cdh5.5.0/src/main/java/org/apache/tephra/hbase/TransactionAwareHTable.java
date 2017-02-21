@@ -43,6 +43,7 @@ import org.apache.hadoop.hbase.client.RowMutations;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.coprocessor.Batch;
 import org.apache.hadoop.hbase.client.coprocessor.Batch.Callback;
+import org.apache.hadoop.hbase.filter.CompareFilter;
 import org.apache.hadoop.hbase.ipc.CoprocessorRpcChannel;
 import org.apache.tephra.AbstractTransactionAwareTable;
 import org.apache.tephra.Transaction;
@@ -59,7 +60,7 @@ import java.util.NavigableMap;
 import java.util.Set;
 
 /**
- * A Transaction Aware HTable implementation for HBase 0.98. Operations are committed as usual,
+ * A Transaction Aware HTable implementation for HBase 1.0. Operations are committed as usual,
  * but upon a failed or aborted transaction, they are rolled back to the state before the transaction
  * was started.
  */
@@ -370,7 +371,38 @@ public class TransactionAwareHTable extends AbstractTransactionAwareTable
     }
   }
 
-  /*
+  @Override
+  public boolean checkAndDelete(byte[] bytes, byte[] bytes1, byte[] bytes2, CompareFilter.CompareOp compareOp,
+                                byte[] bytes3, Delete delete) throws IOException {
+    if (allowNonTransactional) {
+      return hTable.checkAndDelete(bytes, bytes1, bytes2, compareOp, bytes3, delete);
+    } else {
+      throw new UnsupportedOperationException("Operation is not supported transactionally");
+    }
+  }
+
+  @Override
+  public boolean checkAndPut(byte[] bytes, byte[] bytes1, byte[] bytes2, CompareFilter.CompareOp compareOp,
+                             byte[] bytes3, Put put) throws IOException {
+    if (allowNonTransactional) {
+      return hTable.checkAndPut(bytes, bytes1, bytes2, compareOp, bytes3, put);
+    } else {
+      throw new UnsupportedOperationException("Operation is not supported transactionally");
+    }
+  }
+
+  @Override
+  public boolean[] existsAll(List<Get> gets) throws IOException {
+    if (tx == null) {
+      throw new IOException("Transaction not started");
+    }
+    List<Get> transactionalizedGets = new ArrayList<Get>(gets.size());
+    for (Get get : gets) {
+      transactionalizedGets.add(transactionalizeAction(get));
+    }
+    return hTable.existsAll(transactionalizedGets);
+  }
+
   @Override
   public boolean checkAndMutate(byte[] row, byte[] family, byte[] qualifier,
                                 CompareFilter.CompareOp compareOp, byte[] value, RowMutations rowMutations)
@@ -381,7 +413,6 @@ public class TransactionAwareHTable extends AbstractTransactionAwareTable
 
     throw new UnsupportedOperationException("checkAndMutate operation is not supported transactionally");
   }
-  */
 
   @Override
   public void mutateRow(RowMutations rm) throws IOException {
@@ -563,7 +594,7 @@ public class TransactionAwareHTable extends AbstractTransactionAwareTable
     if (familyToDelete.isEmpty()) {
       // perform a row delete if we are using row-level conflict detection
       if (conflictLevel == TxConstants.ConflictDetection.ROW ||
-          conflictLevel == TxConstants.ConflictDetection.NONE) {
+        conflictLevel == TxConstants.ConflictDetection.NONE) {
         // Row delete leaves delete markers in all column families of the table
         // Therefore get all the column families of the hTable from the HTableDescriptor and add them to the changeSet
         for (HColumnDescriptor columnDescriptor : hTable.getTableDescriptor().getColumnFamilies()) {
